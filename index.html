@@ -1,0 +1,2624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Bloody Heart Proposal</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --c-bg-deep:#05000a;
+      --c-primary:#ff2a6d;
+      --c-blood:#8a0303;
+      --c-green:#62d2a2;
+      --c-pink:#dd5b82;
+      --c-text:#e0e0e0;
+      --ease-elastic:cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    *{ box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+    body{
+      margin:0;
+      overflow:hidden;
+      background:var(--c-bg-deep);
+      color:var(--c-text);
+      font-family:'Outfit',sans-serif;
+      height:100vh; width:100vw;
+      user-select:none;
+    }
+
+    /* 1. Three.js Background */
+    #three-bg{ position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+
+    /* 2. Video Feed */
+    #video{
+      position:fixed; inset:0;
+      width:100%; height:100%;
+      object-fit:cover;
+      transform:scaleX(-1);
+      opacity:0.25;
+      filter:grayscale(0.6) contrast(1.2) brightness(0.7);
+      z-index:1;
+      pointer-events:none;
+    }
+
+    /* 3. Skeleton Canvas (HAND LINES) */
+    /* IMPORTANT: keep ABOVE wardrobe, bouquet, etc (but below modal) */
+    #skeleton-canvas{
+      position:fixed; inset:0;
+      width:100%; height:100%;
+      z-index:55;
+      pointer-events:none;
+      transform:scaleX(-1);
+    }
+
+    /* 4. Physics Canvas */
+    #physics-canvas{
+      position:fixed; inset:0;
+      width:100%; height:100%;
+      z-index:3;
+      pointer-events:none;
+      transform:scaleX(-1);
+    }
+
+    /* 4.5 Cosmetics Overlay */
+    /* keep above wardrobe too */
+    #cosmetics-canvas{
+      position:fixed; inset:0;
+      width:100%; height:100%;
+      z-index:56;
+      pointer-events:none;
+      transform:scaleX(-1);
+    }
+
+    /* 5. Confetti Canvas */
+    #confetti-canvas{
+      position:fixed; inset:0;
+      width:100%; height:100%;
+      pointer-events:none;
+      z-index:65;
+    }
+
+    /* Noise + Vignette */
+    .noise{
+      position:fixed; inset:0;
+      z-index:6;
+      opacity:0.05;
+      pointer-events:none;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+    .vignette{
+      position:fixed; inset:0;
+      z-index:7;
+      background:radial-gradient(circle, transparent 40%, rgba(0,0,0,0.85) 100%);
+      pointer-events:none;
+    }
+
+    /* UI */
+    #ui-layer{
+      position:fixed; inset:0;
+      z-index:10;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      align-items:center;
+      padding:40px 0;
+      pointer-events:none;
+    }
+    .hud-text{
+      font-family:'Syne',sans-serif;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:3px;
+      font-size:14px;
+      color:rgba(255,255,255,0.9);
+      text-shadow:0 0 10px var(--c-primary);
+      text-align:center;
+      background:rgba(0,0,0,0.6);
+      padding:10px 20px;
+      border-radius:30px;
+      border:1px solid rgba(255,255,255,0.1);
+      backdrop-filter:blur(5px);
+    }
+    .controls-hint{
+      margin-top:20px;
+      font-size:12px;
+      opacity:0.7;
+      text-shadow:0 0 5px black;
+      text-align:center;
+    }
+    .controls-hint span{ display:block; margin-bottom:5px; }
+    .progress-container{
+      width:300px; height:4px;
+      background:rgba(255,255,255,0.1);
+      border-radius:2px;
+      overflow:hidden;
+      opacity:0;
+      transition:opacity 0.3s;
+      margin-bottom:20px;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    .progress-bar{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg, var(--c-green), var(--c-pink));
+      box-shadow:0 0 15px var(--c-primary);
+      transition:width 0.1s linear;
+    }
+
+    /* CAMERA PICKER MODAL */
+    .boot{
+      position:fixed; inset:0;
+      z-index:80;
+      display:grid;
+      place-items:center;
+      background:rgba(0,0,0,0.86);
+      backdrop-filter:blur(18px);
+    }
+    .boot-card{
+      width:min(560px, 92vw);
+      background:rgba(18, 10, 15, 0.65);
+      border:1px solid rgba(255, 42, 109, 0.35);
+      box-shadow:0 25px 60px rgba(0,0,0,0.8);
+      border-radius:10px;
+      padding:26px 22px;
+      position:relative;
+    }
+    .boot-title{
+      font-family:'Syne',sans-serif;
+      font-weight:800;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      margin:0 0 8px;
+      color:#fff;
+      font-size:18px;
+    }
+    .boot-sub{
+      margin:0 0 18px;
+      opacity:0.85;
+      line-height:1.6;
+      font-size:14px;
+    }
+    .boot-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:12px;
+    }
+    .select{
+      flex:1 1 280px;
+      background:rgba(0,0,0,0.35);
+      border:1px solid rgba(255,255,255,0.18);
+      color:#fff;
+      padding:12px 12px;
+      border-radius:10px;
+      outline:none;
+      font-family:'Outfit',sans-serif;
+    }
+    .boot-note{
+      margin-top:12px;
+      font-size:12px;
+      opacity:0.7;
+      line-height:1.5;
+    }
+    .boot-error{
+      margin-top:10px;
+      color:#ffb3c7;
+      font-size:12px;
+      display:none;
+    }
+    .boot-error.show{ display:block; }
+
+    /* WARDROBE OVERLAY */
+    .wardrobe{
+      position:fixed; inset:0;
+      z-index:40;
+      display:none;
+      background:rgba(0,0,0,0.78);
+      backdrop-filter:blur(18px);
+      pointer-events:auto;
+    }
+    .wardrobe.active{ display:grid; place-items:center; }
+
+    .wardrobe-card{
+      width:min(980px, 94vw);
+      min-height:min(640px, 92vh);
+      background:rgba(18, 10, 15, 0.66);
+      border:1px solid rgba(255,42,109,0.35);
+      box-shadow:0 25px 70px rgba(0,0,0,0.85);
+      border-radius:14px;
+      padding:20px;
+      display:grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap:16px;
+      position:relative;
+      overflow:hidden;
+    }
+    @media (max-width: 860px){
+      .wardrobe-card{ grid-template-columns: 1fr; }
+    }
+
+    .wardrobe-card::before{
+      content:"";
+      position:absolute; inset:-1px;
+      border-radius:14px;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,42,109,0.18), transparent 45%),
+        radial-gradient(circle at 80% 85%, rgba(98,210,162,0.12), transparent 50%);
+      mix-blend-mode:screen;
+      opacity:0.9;
+    }
+
+    .wardrobe-left, .wardrobe-right{
+      position:relative;
+      z-index:1;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.10);
+      background:rgba(0,0,0,0.35);
+      padding:16px;
+    }
+
+    .wardrobe-modal-title{
+      font-family:'Syne',sans-serif;
+      font-weight:800;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color:#fff;
+      font-size:22px;
+      text-align:center;
+      text-shadow:0 0 14px rgba(255,42,109,0.35);
+      position:absolute;
+      top:22px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:2;
+      pointer-events:none;
+    }
+
+    .wardrobe-title{
+      font-family:'Syne',sans-serif;
+      font-weight:800;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      margin:0 0 6px;
+      color:#fff;
+      font-size:18px;
+    }
+    .wardrobe-sub{
+      margin:0 0 10px;
+      opacity:0.8;
+      line-height:1.6;
+      font-size:13px;
+    }
+    .wardrobe-tip{
+      margin-top:10px;
+      font-size:12px;
+      opacity:0.7;
+      line-height:1.5;
+    }
+
+    .preview-wrap{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+      align-items:start;
+    }
+    .preview-box{
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(0,0,0,0.35);
+      padding:14px;
+      min-height:260px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .preview-canvas{
+      width:min(360px, 78vw);
+      height:auto;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 12px 30px rgba(0,0,0,0.65));
+    }
+
+    .section-title{
+      font-family:'Syne',sans-serif;
+      font-weight:800;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      font-size:12px;
+      opacity:0.85;
+      margin:12px 0 8px;
+    }
+
+    .choice-grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width: 520px){
+      .choice-grid{ grid-template-columns: 1fr; }
+    }
+
+    /* Hover-to-select targets */
+    .hover-target{
+      --p:0;
+      position:relative;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(0,0,0,0.35);
+      padding:14px;
+      cursor:pointer;
+      transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+      user-select:none;
+      overflow:hidden;
+    }
+    .hover-target:hover{
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.30);
+      background: rgba(255,255,255,0.06);
+    }
+    .hover-target.active{
+      border-color: rgba(255,42,109,0.65);
+      box-shadow: 0 0 22px rgba(255,42,109,0.15);
+      background: rgba(255,42,109,0.08);
+    }
+    .hover-target.hovering{
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .hover-target::after{
+      content:"";
+      position:absolute;
+      width:42px; height:42px;
+      right:10px; top:10px;
+      border-radius:999px;
+      background:
+        conic-gradient(var(--c-primary) calc(var(--p) * 1turn), rgba(255,255,255,0.12) 0);
+      mask: radial-gradient(circle, transparent 58%, #000 60%);
+      opacity:0.0;
+      transform: scale(0.92);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      pointer-events:none;
+    }
+    .hover-target.hovering::after{
+      opacity:1;
+      transform: scale(1);
+    }
+
+    .choice-title{
+      font-family:'Syne',sans-serif;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:1.4px;
+      font-size:13px;
+      color:#fff;
+      margin:0 0 6px;
+    }
+    .choice-desc{
+      margin:0;
+      font-size:12px;
+      opacity:0.75;
+      line-height:1.45;
+    }
+
+    .wardrobe-actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    /* BOUQUET OVERLAY (after kiss, before poem) */
+    .bouquet-overlay{
+      position:fixed; inset:0;
+      z-index:75; /* above wardrobe/ui, below boot maybe; still below modal */
+      display:none;
+      place-items:center;
+      background:rgba(0,0,0,0.65);
+      backdrop-filter:blur(12px);
+      pointer-events:none;
+    }
+    .bouquet-overlay.show{ display:grid; }
+    .bouquet-card{
+      width:min(720px, 92vw);
+      height:min(720px, 78vh);
+      display:grid;
+      place-items:center;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(0,0,0,0.35);
+      box-shadow:0 30px 90px rgba(0,0,0,0.85);
+      position:relative;
+      overflow:hidden;
+    }
+    .bouquet-card::before{
+      content:"";
+      position:absolute; inset:-1px;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,42,109,0.18), transparent 55%),
+        radial-gradient(circle at 70% 80%, rgba(255,255,255,0.08), transparent 55%);
+      pointer-events:none;
+    }
+    .bouquet-img{
+      width:92%;
+      height:92%;
+      object-fit:contain; /* show ALL parts */
+      filter: drop-shadow(0 18px 50px rgba(0,0,0,0.65));
+      position:relative;
+      z-index:1;
+    }
+    .bouquet-caption{
+      position:absolute;
+      bottom:14px; left:50%;
+      transform:translateX(-50%);
+      font-family:'Syne',sans-serif;
+      font-weight:800;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      font-size:12px;
+      opacity:0.85;
+      color:#fff;
+      background:rgba(0,0,0,0.35);
+      border:1px solid rgba(255,255,255,0.12);
+      padding:8px 14px;
+      border-radius:999px;
+      z-index:2;
+      text-shadow:0 0 12px rgba(255,42,109,0.35);
+    }
+
+    /* PROPOSAL MODAL */
+    .modal{
+      position:fixed; inset:0;
+      display:grid; place-items:center;
+      background:rgba(0,0,0,0.8);
+      backdrop-filter:blur(20px);
+      z-index:90;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 0.8s ease;
+    }
+    .modal.active{ opacity:1; pointer-events:auto; }
+
+    .modal-card{
+      background:rgba(18, 10, 15, 0.6);
+      border:1px solid rgba(255, 42, 109, 0.3);
+      padding:40px 30px;
+      border-radius:10px;
+      text-align:center;
+      max-width:560px;
+      width:92%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      transform:scale(0.9) translateY(20px);
+      transition:transform 0.8s var(--ease-elastic);
+      box-shadow:0 25px 60px rgba(0,0,0,0.8);
+      position:relative;
+
+      max-height:92vh;
+      min-height:560px;
+      justify-content:center;
+      gap:8px;
+      overflow:visible;
+    }
+    .modal-card:has(#step-4:not(.hidden)){
+      position:fixed;
+      inset:0;
+      max-width:none;
+      width:100vw;
+      height:100vh;
+      min-height:100vh;
+      background:transparent;
+      border:none;
+      padding:0;
+      box-shadow:none;
+      border-radius:0;
+      transform:none;
+    }
+    #step-4{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+    }
+    @media (max-height: 760px){
+      .modal-card{ min-height:500px; padding:30px 20px; }
+    }
+    @media (max-height: 640px){
+      .modal-card{ min-height:460px; }
+    }
+    .modal-card::before{
+      content:''; position:absolute; top:-1px; left:-1px;
+      width:20px; height:20px;
+      border-top:2px solid var(--c-primary);
+      border-left:2px solid var(--c-primary);
+    }
+    .modal-card::after{
+      content:''; position:absolute; bottom:-1px; right:-1px;
+      width:20px; height:20px;
+      border-bottom:2px solid var(--c-primary);
+      border-right:2px solid var(--c-primary);
+    }
+    .modal.active .modal-card{ transform:scale(1) translateY(0); }
+
+    .step-content{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      animation:fadeIn 0.5s ease forwards;
+    }
+    .step-content.hidden{ display:none; opacity:0; pointer-events:none; }
+    @keyframes fadeIn{
+      from{ opacity:0; transform:translateY(10px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+
+    .poem-title{
+      font-family:'Syne',sans-serif;
+      font-weight:800;
+      font-size:22px;
+      margin-bottom:12px;
+      color:white;
+      text-transform:uppercase;
+      line-height:1.2;
+      padding:0 8px;
+    }
+    .poem-body{
+      font-style:italic;
+      font-size:15px;
+      line-height:1.8;
+      color:#ddd;
+      margin-bottom:18px;
+      overflow:visible;
+      max-height:none;
+      text-align:center;
+      padding:0 10px;
+      white-space:pre-line;
+    }
+
+    .reveal-line{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:10px;
+      margin:6px 0 8px;
+    }
+    .reveal-word{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:52px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(0,0,0,0.35);
+      cursor:pointer;
+      user-select:none;
+      transition:transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+      pointer-events:auto;
+      position:relative;
+      overflow:hidden;
+    }
+    .reveal-word:hover{
+      transform:translateY(-1px);
+      border-color:rgba(255,255,255,0.35);
+      background:rgba(255,255,255,0.08);
+    }
+    .reveal-word::before{
+      content:"";
+      position:absolute; inset:0;
+      background:radial-gradient(circle at 30% 30%, rgba(255,42,109,0.22), transparent 60%);
+      opacity:1;
+      transition:opacity 0.25s ease;
+      pointer-events:none;
+    }
+    .reveal-word .hint{
+      width:22px; height:10px;
+      border-radius:6px;
+      background:rgba(255,255,255,0.26);
+      box-shadow:0 0 14px rgba(255,42,109,0.25);
+      display:inline-block;
+      transition:opacity 0.2s ease;
+    }
+    .reveal-word .word{
+      display:inline-block;
+      opacity:0;
+      transform:translateY(6px);
+      filter:blur(6px);
+      font-family:'Syne',sans-serif;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      font-weight:800;
+      font-size:14px;
+      color:#fff;
+    }
+    .reveal-word.revealed::before{ opacity:0; }
+    .reveal-word.revealed .hint{ opacity:0; width:0; margin:0; }
+    .reveal-word.revealed .word{ animation:wordReveal 420ms ease forwards; }
+    @keyframes wordReveal{
+      from{ opacity:0; transform:translateY(8px); filter:blur(8px); }
+      to{ opacity:1; transform:translateY(0); filter:blur(0); }
+    }
+
+    .outcome-text{
+      font-family:'Syne',sans-serif;
+      font-size:20px;
+      margin:18px 0 8px;
+      font-weight:700;
+      color:white;
+      opacity:0;
+      transform:translateY(10px);
+      transition:all 0.5s ease;
+      display:none;
+      letter-spacing:1px;
+      text-align:center;
+      padding:0 10px;
+    }
+    .outcome-text.show{ opacity:1; transform:translateY(0); display:block; }
+
+    .btn{
+      padding:12px 30px;
+      border:1px solid rgba(255,255,255,0.3);
+      font-weight:600;
+      cursor:pointer;
+      font-size:13px;
+      letter-spacing:1px;
+      background:rgba(0,0,0,0.4);
+      color:white;
+      transition:0.3s;
+      text-transform:uppercase;
+      font-family:'Outfit',sans-serif;
+      pointer-events:auto;
+      border-radius:10px;
+    }
+    .btn:hover{ background:rgba(255,255,255,0.1); border-color:white; }
+    .btn-primary{
+      background:var(--c-primary);
+      border-color:var(--c-primary);
+      box-shadow:0 0 20px rgba(255, 42, 109, 0.4);
+    }
+    .btn-primary:hover{ background:#ff477f; }
+    .btn-row{
+      display:flex;
+      gap:15px;
+      justify-content:center;
+      margin-top:16px;
+      transition:opacity 0.3s;
+      pointer-events:auto;
+    }
+
+    /* ROSE */
+    .rose-wrapper{ margin:12px 0; transform:scale(0.68); }
+    @media (max-height: 700px){ .rose-wrapper{ transform:scale(0.52); margin:8px 0; } }
+    .container{ position:relative; width:200px; height:350px; }
+    .glass{ height:350px; width:200px; background:#122139; border-radius:300px 300px 0 0; position:absolute; z-index:1; }
+    .glass:before{ content:""; height:10px; width:10px; border:10px solid #122139; border-radius:100%; position:absolute; left:87px; top:-25px; }
+    .glass:after{ content:""; position:absolute; height:15px; width:250px; background:#a52a2a; top:100%; left:-13%; }
+    .shine{ width:12px; height:140px; background:white; opacity:.2; position:absolute; left:85%; top:80px; border-radius:100px; z-index:10; }
+    .shine:before{ content:""; width:12px; height:20px; position:absolute; background:white; top:160px; border-radius:100px; }
+    .petals{ position:absolute; z-index:5; width:100%; height:100%; }
+    .petals>div{ position:absolute; background:#d52d58; width:45px; height:80px; top:55px; transition:all .5s ease-out; }
+    .petals>div:nth-child(1){border-radius:15px; box-shadow:0 0 30px rgba(245,148,184,1); left:80px; top:60px; z-index:6;}
+    .petals>div:nth-child(2), .petals>div:nth-child(4), .petals>div:nth-child(6){background:#b81b43; left:60px; border-radius:0 30px 0 30px; transform-origin:bottom right;}
+    .petals>div:nth-child(3), .petals>div:nth-child(5), .petals>div:nth-child(7){background:#b81b43; left:100px; border-radius:30px 0 30px 0; transform-origin:bottom left;}
+    .petals>div:nth-child(2){z-index:5; background:#a31b3d; top:75px; height:70px; box-shadow:0 0 50px rgba(245,148,184,.5); animation:bloom2 3s ease-in-out forwards;}
+    .petals>div:nth-child(3){z-index:4; background:#a31b3d; top:75px; height:70px; box-shadow:0 0 50px rgba(245,148,184,.5); animation:bloom3 3s ease-in-out forwards, glowing 2.5s ease-in-out infinite;}
+    .petals>div:nth-child(4){z-index:3; background:#b81b43; top:70px; height:75px; box-shadow:0 0 50px rgba(245,148,184,.5); animation:bloom4 3s ease-in-out forwards, glowing 2.5s ease-in-out infinite;}
+    .petals>div:nth-child(5){z-index:2; background:#b81b43; top:70px; height:75px; box-shadow:0 0 50px rgba(245,148,184,.5); animation:bloom5 3s ease-in-out forwards, glowing 2.5s ease-in-out infinite;}
+    .petals>div:nth-child(6){z-index:1; background:#c9204b; top:65px; height:70px; box-shadow:0 0 50px rgba(245,148,184,.3); animation:bloom6 3s ease-in-out forwards, glowing 2.5s ease-in-out infinite;}
+    .petals>div:nth-child(7){z-index:0; background:#c9204b; top:65px; height:70px; box-shadow:0 0 50px rgba(245,148,184,.3); animation:bloom7 3s ease-in-out forwards, glowing 2.5s ease-in-out infinite;}
+    .deadPetals{position:absolute; z-index:4; width:100%; height:100%;}
+    .deadPetals>div{position:absolute; background:#d52d58; width:20px; height:15px; top:120px; border-radius:0 30px 0 30px; box-shadow:0 0 30px rgba(245,148,184,.5);}
+    .deadPetals>div:nth-child(1){left:85px; transform:rotate(-30deg); animation:falling 20s 4s ease-in-out infinite;}
+    .deadPetals>div:nth-child(2){left:102px; transform:rotate(-30deg); animation:falling 20s 8s ease-in-out infinite;}
+    .deadPetals>div:nth-child(3){left:71px; transform:rotate(-30deg); animation:falling 20s 12s ease-in-out infinite;}
+    .deadPetals>div:nth-child(4){left:93px; transform:rotate(-30deg); animation:falling 20s 16s ease-in-out infinite;}
+    .leaves{position:absolute; z-index:2; width:100%; height:100%;}
+    .leaves>div:nth-last-child(1){position:absolute; width:55px; height:30px; background:#338f37; top:120px; left:75px; border-radius:100px;}
+    .leaves>div:nth-child(1){position:absolute; width:6px; height:210px; background:#055905; top:95px; left:100px; border-radius:0 0 100px 100px;}
+    .leaves>div:nth-child(2){position:absolute; width:30px; height:50px; border-radius:5px 40px 20px 40px; background:#055905; transform-origin:bottom; transform:rotate(-30deg); top:180px; left:80px; box-shadow:inset 5px 5px #066406;}
+    .leaves>div:nth-child(3){position:absolute; width:30px; height:50px; border-radius:40px 5px 40px 20px; background:#055905; transform-origin:bottom; transform:rotate(30deg); top:150px; left:95px; box-shadow:inset -5px 5px #066406;}
+    .thorns{position:absolute; z-index:3; width:100%; height:100%;}
+    .thorns>div{position:absolute; width:0; height:0; top:140px;}
+    .thorns>div:nth-child(odd){border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:5px solid #055905; left:105px;}
+    .thorns>div:nth-child(even){border-top:5px solid transparent; border-bottom:5px solid transparent; border-right:5px solid #055905; left:95px;}
+    .thorns>div:nth-child(1){top:200px;}
+    .thorns>div:nth-child(2){top:170px;}
+    .thorns>div:nth-child(4){top:230px;}
+    @keyframes bloom2 { 50%{transform:rotate(-90deg); top:200px; left:100px;} 100%{transform:rotate(-60deg); top:252px; left:50px; background:#8d1839; box-shadow:0 0 0 rgba(245,148,184,0);} }
+    @keyframes bloom3 { 100%{transform:rotate(45deg);} }
+    @keyframes bloom4 { 100%{transform:rotate(-20deg);} }
+    @keyframes bloom5 { 100%{transform:rotate(20deg);} }
+    @keyframes bloom6 { 100%{transform:rotate(-5deg);} }
+    @keyframes bloom7 { 100%{transform:rotate(5deg);} }
+    @keyframes glowing { 50%{background:#dd3d68; box-shadow:0 0 60px rgba(245,148,184,1);} }
+    @keyframes falling { 20%{top:335px; background:#a41c3d; box-shadow:0 0 0 rgba(245,148,184,0);} 100%{top:335px; opacity:0;} }
+
+    /* HEART FRAME IMAGE (YES RESULT) */
+    .heart-stage{
+      width:min(360px, 82vw);
+      aspect-ratio:1/1;
+      margin:8px 0 10px;
+      position:relative;
+      filter:drop-shadow(0 14px 30px rgba(0,0,0,0.6));
+    }
+    .heart-stage svg{ width:100%; height:100%; display:block; }
+    .heart-outline{
+      fill:rgba(0,0,0,0.25);
+      stroke:rgba(255,42,109,0.85);
+      stroke-width:10;
+      filter:drop-shadow(0 0 18px rgba(255,42,109,0.25));
+    }
+    .heart-img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      background:rgba(0,0,0,0.25);
+    }
+
+    /* STARFIELD ANIMATION */
+    #starfield{
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      z-index:0;
+      background:#111;
+    }
+    #valentinesButton{
+      display:none;
+      position:fixed;
+      background-color:#8a0303;
+      border:2px solid #8a0303;
+      color:#fff;
+      cursor:pointer;
+      height:50px;
+      font-size:16px;
+      font-family:'Outfit',sans-serif;
+      border-radius:10px;
+      top:calc(50% + 150px);
+      left:50%;
+      transform:translateX(-50%);
+      transition:background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+      z-index:100;
+      padding:0 20px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      pointer-events:auto;
+    }
+    #valentinesButton:hover{
+      background-color:#6a0202;
+      color:#eee;
+    }
+    #step-4{
+      position:relative;
+      width:100%;
+      height:100%;
+      min-height:100vh;
+      overflow:hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="three-bg"></canvas>
+  <video id="video" playsinline autoplay muted></video>
+
+  <canvas id="physics-canvas"></canvas>
+  <canvas id="skeleton-canvas"></canvas>
+  <canvas id="cosmetics-canvas"></canvas>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="noise"></div>
+  <div class="vignette"></div>
+
+  <div id="ui-layer">
+    <div class="hud-text" id="instruction">Bring them together<br>Make them Kiss</div>
+    <div class="progress-container" id="prog-cont">
+      <div class="progress-bar" id="prog-bar"></div>
+    </div>
+    <div class="controls-hint">
+      <span style="color: var(--c-green)">Left Hand (Green)</span>
+      <span style="color: var(--c-pink)">Right Hand (Pink)</span>
+    </div>
+  </div>
+
+  <!-- Bouquet overlay (shows AFTER kiss, BEFORE poem modal) -->
+  <div id="bouquetOverlay" class="bouquet-overlay" aria-hidden="true">
+    <div class="bouquet-card">
+      <img
+        class="bouquet-img"
+        alt="Bouquet"
+        src="https://i.postimg.cc/0NW5XSZG/vecteezy-bouquet-of-red-and-pink-pink-roses-bouquet-for-valentines-56183235.png"
+      />
+      <div class="bouquet-caption">For you</div>
+    </div>
+  </div>
+
+  <!-- BOOT / CAMERA PICKER -->
+  <div id="boot" class="boot">
+    <div class="boot-card">
+      <h2 class="boot-title">Choose your camera</h2>
+      <p class="boot-sub">
+        Pick which camera to use, then hit Start.
+        <br/>If your camera list looks empty, click “Refresh”, then allow camera access.
+      </p>
+
+      <div class="boot-row">
+        <select id="cameraSelect" class="select"></select>
+        <button class="btn" id="refreshCams">Refresh</button>
+        <button class="btn btn-primary" id="startBtn">Start</button>
+      </div>
+
+      <div id="bootError" class="boot-error"></div>
+      <div class="boot-note">
+        Tip: Some browsers only reveal camera names after you grant permission once.
+      </div>
+    </div>
+  </div>
+
+  <!-- WARDROBE OVERLAY -->
+  <div id="wardrobe" class="wardrobe">
+    <div class="wardrobe-modal-title">The Valentines Wedding</div>
+    <div class="wardrobe-card">
+      <div class="wardrobe-left">
+        <h2 class="wardrobe-title" id="wardrobeTitle">Wardrobe: Pink Dino</h2>
+        <p class="wardrobe-sub" id="wardrobeSub">
+          Hover your index finger over a choice to select it.
+          Hold for a moment to confirm.
+        </p>
+
+        <div class="preview-wrap">
+          <div class="preview-box">
+            <canvas id="previewCanvas" class="preview-canvas" width="320" height="240"></canvas>
+          </div>
+        </div>
+
+        <div class="wardrobe-tip">
+          No hands detected? The selection timer pauses.
+        </div>
+      </div>
+
+      <div class="wardrobe-right">
+        <div class="section-title">Hat</div>
+        <div class="choice-grid" id="hatGrid">
+          <div class="hover-target" data-hover-id="hat-none">
+            <div class="choice-title">Default</div>
+            <p class="choice-desc">No hat. Classic pixel dino vibes.</p>
+          </div>
+          <div class="hover-target" data-hover-id="hat-special">
+            <div class="choice-title" id="hatSpecialTitle">Wedding Hat</div>
+            <p class="choice-desc" id="hatSpecialDesc">White fascinator-ish hat. Bridal energy.</p>
+          </div>
+        </div>
+
+        <div class="section-title" id="outfitTitle">Outfit</div>
+        <div class="choice-grid" id="outfitGrid">
+          <div class="hover-target" data-hover-id="outfit-none">
+            <div class="choice-title">Default</div>
+            <p class="choice-desc">No outfit. Free range dino.</p>
+          </div>
+          <div class="hover-target" data-hover-id="outfit-special">
+            <div class="choice-title" id="outfitSpecialTitle">Wedding Dress</div>
+            <p class="choice-desc" id="outfitSpecialDesc">White dress. Main character energy.</p>
+          </div>
+        </div>
+
+        <div class="wardrobe-actions">
+          <button class="btn hover-target" data-hover-id="revert">Revert</button>
+          <button class="btn btn-primary hover-target" data-hover-id="continue">Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPOSAL MODAL -->
+  <div id="modal" class="modal">
+    <div class="modal-card">
+      <div id="step-1" class="step-content">
+        <div class="poem-title">"Ten Days to fall in Love:"</div>
+        <div class="poem-body">
+I did not think that ten short days
+Could alter how I see,
+That something brief and undefined
+Could feel so real to me.
+Yet quietly, without a sign,
+You settled in my mind.
+
+Each night, when silence filled the room
+And sleep refused to stay,
+Your voice became the steady light
+That guided me each way.
+Five hours, two distant skies,
+Still somehow side by side.
+
+So now I speak without disguise,
+With nothing left unclear:
+Ashley, I choose you every day,
+In doubt, in hope, in fear.
+Will you be mine, not just for now,
+But for the years to come?
+        </div>
+        <button class="btn btn-primary" id="continue-btn">Continue</button>
+      </div>
+
+      <div id="step-2" class="step-content hidden">
+        <div class="reveal-line" id="salutation-line"></div>
+
+        <div class="rose-wrapper">
+          <div class="container">
+            <div class="glass"><div class="shine"></div></div>
+            <div class="thorns"><div></div><div></div><div></div><div></div></div>
+            <div class="leaves"><div></div><div></div><div></div><div></div></div>
+            <div class="petals"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+            <div class="deadPetals"><div></div><div></div><div></div><div></div></div>
+          </div>
+        </div>
+
+        <div class="reveal-line" id="question-line"></div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="yes-btn">Yes</button>
+          <button class="btn" id="talk-btn">Let's talk</button>
+        </div>
+      </div>
+
+      <div id="step-3" class="step-content hidden">
+        <div id="yesImageWrap" style="display:none; width:100%; display:flex; flex-direction:column; align-items:center;">
+          <div class="heart-stage" aria-label="Heart framed photo">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <clipPath id="heartClip">
+                  <path d="M256 470s-28-20-56-40C120 370 56 316 56 228c0-62 46-108 106-108 35 0 68 16 88 42 20-26 53-42 88-42 60 0 106 46 106 108 0 88-64 142-144 202-28 20-56 40-56 40z"/>
+                </clipPath>
+              </defs>
+
+              <image
+                href="https://i.postimg.cc/T3dw6sTw/image-2026-01-29-223352404.png"
+                x="0" y="0" width="512" height="512"
+                preserveAspectRatio="xMidYMid meet"
+                clip-path="url(#heartClip)"
+                class="heart-img"
+              />
+              <path class="heart-outline" d="M256 470s-28-20-56-40C120 370 56 316 56 228c0-62 46-108 106-108 35 0 68 16 88 42 20-26 53-42 88-42 60 0 106 46 106 108 0 88-64 142-144 202-28 20-56 40-56 40z"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="outcome-text" id="outcome"></div>
+      </div>
+
+      <div id="step-4" class="step-content hidden">
+        <canvas id="starfield"></canvas>
+        <button id="valentinesButton">Click Me! ❤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenMax.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+  <script>
+    /* -------------------------------------------------------------
+      THREE BACKGROUND
+    ------------------------------------------------------------- */
+    (function initThreeBG(){
+      const canvas = document.getElementById('three-bg');
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x05000a, 0.03);
+
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
+      camera.position.z = 15;
+
+      const heartShape = new THREE.Shape();
+      const x = 0, y = 0;
+      heartShape.moveTo( x+5, y+5 );
+      heartShape.bezierCurveTo( x+5, y+5, x+4, y, x, y );
+      heartShape.bezierCurveTo( x-6, y, x-6, y+7, x-6, y+7 );
+      heartShape.bezierCurveTo( x-6, y+11, x-3, y+15.4, x+5, y+19 );
+      heartShape.bezierCurveTo( x+12, y+15.4, x+16, y+11, x+16, y+7 );
+      heartShape.bezierCurveTo( x+16, y+7, x+16, y, x+10, y );
+      heartShape.bezierCurveTo( x+7, y, x+5, y+5, x+5, y+5 );
+
+      const extrudeSettings = { depth:2, bevelEnabled:true, bevelSegments:2, steps:2, bevelSize:1, bevelThickness:1 };
+      const geometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+      geometry.center();
+      geometry.scale(0.08, 0.08, 0.08);
+
+      const material = new THREE.MeshBasicMaterial({
+        color:0x330011,
+        wireframe:true,
+        transparent:true,
+        opacity:0.3
+      });
+
+      const heartGroup = new THREE.Group();
+      scene.add(heartGroup);
+
+      const hearts = [];
+      for (let i=0;i<15;i++){
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set((Math.random()-0.5)*30, (Math.random()-0.5)*30, (Math.random()-0.5)*10);
+        mesh.userData = { rotX:(Math.random()-0.5)*0.02, rotY:(Math.random()-0.5)*0.02 };
+        heartGroup.add(mesh);
+        hearts.push(mesh);
+      }
+
+      const clock = new THREE.Clock();
+      function animate(){
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+        heartGroup.rotation.y = t * 0.05;
+        hearts.forEach(h=>{
+          h.rotation.x += h.userData.rotX;
+          h.rotation.y += h.userData.rotY;
+          h.position.y += Math.sin(t + h.position.x) * 0.005;
+        });
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      window.addEventListener('resize', ()=>{
+        camera.aspect = window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    })();
+
+    /* -------------------------------------------------------------
+      MATTER PHYSICS (BOUNDS ALWAYS ON, DINOS SPAWN LATER)
+    ------------------------------------------------------------- */
+    const Engine = Matter.Engine,
+      Render = Matter.Render,
+      Runner = Matter.Runner,
+      Bodies = Matter.Bodies,
+      Body = Matter.Body,
+      Composite = Matter.Composite,
+      Constraint = Matter.Constraint,
+      Common = Matter.Common,
+      Events = Matter.Events,
+      World = Matter.World,
+      Vector = Matter.Vector;
+
+    let vw = window.innerWidth;
+    let vh = window.innerHeight;
+
+    const engine = Engine.create();
+    engine.enableSleeping = true;
+    engine.world.gravity.y = 0.25;
+
+    engine.positionIterations = 10;
+    engine.velocityIterations = 10;
+    engine.constraintIterations = 8;
+
+    const physicsCanvas = document.getElementById('physics-canvas');
+    const render = Render.create({
+      canvas: physicsCanvas,
+      engine,
+      options:{
+        width: vw,
+        height: vh,
+        wireframes: false,
+        background: 'transparent'
+      }
+    });
+
+    Render.run(render);
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+    // bounds
+    const catchGround = Bodies.rectangle(vw/2, vh + 500, vw*2, 100, { isStatic:true, render:{visible:false} });
+
+    const floorThickness = 80;
+    const floor = Bodies.rectangle(vw/2, vh - (floorThickness/2) + 2, vw*2, floorThickness, {
+      isStatic:true,
+      render:{ visible:false }
+    });
+
+    const leftWall  = Bodies.rectangle(-500, vh/2, 100, vh*2, { isStatic:true, render:{visible:false} });
+    const rightWall = Bodies.rectangle(vw+500, vh/2, 100, vh*2, { isStatic:true, render:{visible:false} });
+
+    World.add(engine.world, [catchGround, floor, leftWall, rightWall]);
+
+    /* -------------------------------------------------------------
+      DINO DATA + CLASSIC SOFT SKELETON (MATCHES dino.html)
+    ------------------------------------------------------------- */
+    const size = 18; // 40% smaller than 30
+    const shape = [
+      [0,0,0,0,0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,0,1,1,1,1],
+      [0,0,0,0,0,0,0,1,1,1,1],
+      [0,0,0,0,0,0,0,1,1,0,0],
+      [0,0,0,0,0,0,0,1,1,0,0],
+      [0,0,0,0,0,0,0,1,1,0,0],
+      [0,0,0,0,0,0,0,1,1,0,0],
+      [0,0,0,0,0,0,0,1,1,0,0],
+      [0,0,0,1,1,1,1,1,1,0,0],
+      [1,1,1,1,1,1,1,1,1,0,0],
+      [0,0,0,1,1,1,1,1,1,0,0],
+      [0,0,0,1,1,0,0,1,1,0,0],
+      [0,0,0,1,1,0,0,1,1,0,0],
+      [0,0,0,1,1,0,0,1,1,0,0],
+    ];
+
+    function deepCopyMatrix(m){ return m.map(r=> r.map(v=>v)); }
+    function mirrorMatrix(m){ return m.map(r=> [...r].reverse()); }
+
+    function connect(c, bodyA, bodyB, constraintOptions) {
+      if (bodyA && bodyB) {
+        Composite.addConstraint(
+          c,
+          Constraint.create(
+            Common.extend(
+              {
+                bodyA: bodyA,
+                bodyB: bodyB
+              },
+              constraintOptions
+            )
+          )
+        );
+      }
+    }
+
+    function softSkeleton(xx, yy, matrix, particleRadius, constraintOptions, callback) {
+      let c = Composite.create({ label: "Skeleton" });
+      let y = 0;
+      let lastRow = null;
+      constraintOptions = constraintOptions || { stiffness: 0.95 };
+
+      callback =
+        callback ||
+        function (x, y, size) {
+          return Bodies.rectangle(x, y, size, size);
+        };
+
+      for (let i = 0, len = matrix.length; i < len; i++) {
+        let row = matrix[i];
+        let x = 0;
+
+        for (let j = 0, count = row.length; j < count; j++) {
+          if (row[j]) {
+            row[j] = callback(
+              xx + x * particleRadius,
+              yy + y * particleRadius,
+              particleRadius,
+              i,
+              j
+            );
+
+            Composite.addBody(c, row[j]);
+
+            connect(c, row[j - 1], row[j], constraintOptions);
+
+            if (lastRow) {
+              connect(c, row[j], lastRow[j], constraintOptions);
+              connect(c, row[j], lastRow[j + 1], constraintOptions);
+              connect(c, row[j], lastRow[j - 1], constraintOptions);
+            }
+          }
+          x++;
+        }
+
+        y++;
+        lastRow = row;
+      }
+
+      return c;
+    }
+
+    function getTopBody(comp){
+      let top = comp.bodies[0];
+      for (const b of comp.bodies) if (b.position.y < top.position.y) top = b;
+      return top;
+    }
+
+    function getHeadCornerBody(matrix, isPink){
+      // Corner of head just above mouth: use row 1 (or row 0 fallback)
+      if (!matrix.length) return null;
+      const rowIndex = matrix[1] ? 1 : 0;
+      const row = matrix[rowIndex];
+      if (!row) return null;
+      if (isPink){
+        for (let j = 0; j < row.length; j++){
+          if (row[j]) return row[j];
+        }
+      } else {
+        for (let j = row.length - 1; j >= 0; j--){
+          if (row[j]) return row[j];
+        }
+      }
+      return null;
+    }
+
+    function getBoundingBox(comp){
+      const b = comp.bodies;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const body of b){
+        const bx = body.bounds;
+        if (bx.min.x < minX) minX = bx.min.x;
+        if (bx.min.y < minY) minY = bx.min.y;
+        if (bx.max.x > maxX) maxX = bx.max.x;
+        if (bx.max.y > maxY) maxY = bx.max.y;
+      }
+      return { minX, minY, maxX, maxY, cx:(minX+maxX)/2, cy:(minY+maxY)/2, w:(maxX-minX), h:(maxY-minY) };
+    }
+
+    // dinos created later
+    let greenComposite = null;
+    let pinkComposite = null;
+    let greenHook = null;
+    let pinkHook = null;
+
+    // constraints to hands
+    let greenHandConstraint = null;
+    let pinkHandConstraint  = null;
+    let greenAttached = false;
+    let pinkAttached = false;
+    let greenTarget = { x: vw * 0.3, y: vh * 0.3 };
+    let pinkTarget  = { x: vw * 0.7, y: vh * 0.3 };
+
+    function attachGreen(x,y){
+      if (!greenHook) return;
+      greenTarget = { x, y };
+      if (!greenAttached){
+        greenHandConstraint = Constraint.create({
+          pointA:{ x: greenHook.position.x, y: greenHook.position.y },
+          bodyB: greenHook,
+          pointB:{ x:0, y:0 },
+          stiffness:0.9,
+          damping:0.2,
+          length:0,
+          render:{ visible:false }
+        });
+        World.add(engine.world, greenHandConstraint);
+        greenAttached = true;
+      } else {
+        greenTarget = { x, y };
+      }
+    }
+    function detachGreen(){
+      if (greenAttached && greenHandConstraint){
+        World.remove(engine.world, greenHandConstraint);
+        greenHandConstraint = null;
+        greenAttached = false;
+      }
+    }
+    function attachPink(x,y){
+      if (!pinkHook) return;
+      pinkTarget = { x, y };
+      if (!pinkAttached){
+        pinkHandConstraint = Constraint.create({
+          pointA:{ x: pinkHook.position.x, y: pinkHook.position.y },
+          bodyB: pinkHook,
+          pointB:{ x:0, y:0 },
+          stiffness:0.9,
+          damping:0.2,
+          length:0,
+          render:{ visible:false }
+        });
+        World.add(engine.world, pinkHandConstraint);
+        pinkAttached = true;
+      } else {
+        pinkTarget = { x, y };
+      }
+    }
+    function detachPink(){
+      if (pinkAttached && pinkHandConstraint){
+        World.remove(engine.world, pinkHandConstraint);
+        pinkHandConstraint = null;
+        pinkAttached = false;
+      }
+    }
+
+    function updateHandConstraints(){
+      if (greenAttached && greenHandConstraint){
+        const cur = greenHandConstraint.pointA;
+        const next = smoothPoint(cur, greenTarget, 0.138);
+        let dx = next.x - cur.x;
+        let dy = next.y - cur.y;
+        const dist = Math.hypot(dx, dy);
+        const maxStep = size * 1.725;
+        if (dist > maxStep){
+          const s = maxStep / dist;
+          dx *= s;
+          dy *= s;
+        }
+        greenHandConstraint.pointA.x = cur.x + dx;
+        greenHandConstraint.pointA.y = cur.y + dy;
+      }
+      if (pinkAttached && pinkHandConstraint){
+        const cur = pinkHandConstraint.pointA;
+        const next = smoothPoint(cur, pinkTarget, 0.138);
+        let dx = next.x - cur.x;
+        let dy = next.y - cur.y;
+        const dist = Math.hypot(dx, dy);
+        const maxStep = size * 1.725;
+        if (dist > maxStep){
+          const s = maxStep / dist;
+          dx *= s;
+          dy *= s;
+        }
+        pinkHandConstraint.pointA.x = cur.x + dx;
+        pinkHandConstraint.pointA.y = cur.y + dy;
+      }
+    }
+
+    function clearDinosIfAny(){
+      detachGreen();
+      detachPink();
+
+      if (greenComposite){ World.remove(engine.world, greenComposite); greenComposite = null; }
+      if (pinkComposite){ World.remove(engine.world, pinkComposite); pinkComposite = null; }
+
+      greenHook = null; pinkHook = null;
+    }
+
+    function spawnDinosDropIn(){
+      clearDinosIfAny();
+
+      const startY = -220;
+
+      const greenMatrix = deepCopyMatrix(shape);
+      greenComposite = softSkeleton(
+        vw * 0.30, startY,
+        greenMatrix,
+        size,
+        { stiffness: 0.99, render: { visible: false } },
+        function (x, y, s, i, j) {
+          const sSize = s * (j < 4 ? 0.8 : 1);
+          const col = (i===2 && j===9) ? "#000" : (j%2 !== (i%2 ? 0 : 1) ? "#62d2a2" : "#52C292");
+          return Bodies.rectangle(x, y, sSize, sSize, {
+            render: {
+              fillStyle: col,
+              strokeStyle: "#62d2a2",
+              lineWidth: sSize * 0.3
+            }
+          });
+        }
+      );
+
+      const pinkMatrix = mirrorMatrix(deepCopyMatrix(shape));
+      pinkComposite = softSkeleton(
+        vw * 0.70, startY,
+        pinkMatrix,
+        size,
+        { stiffness: 0.9, render: { visible: false } },
+        function (x, y, s, i, j) {
+          const sSize = s * (j > 7 ? 0.8 : 1);
+          const col = (i===2 && j===2) ? "#000" : (j%2 !== (i%2 ? 0 : 1) ? "#dd5b82" : "#CD4B72");
+          return Bodies.rectangle(x, y, sSize, sSize, {
+            render: {
+              fillStyle: col,
+              strokeStyle: "#dd5b82",
+              lineWidth: sSize * 0.3
+            }
+          });
+        }
+      );
+
+      World.add(engine.world, greenComposite);
+      World.add(engine.world, pinkComposite);
+
+      greenHook = getHeadCornerBody(greenMatrix, false) || getTopBody(greenComposite);
+      pinkHook  = getHeadCornerBody(pinkMatrix, true) || getTopBody(pinkComposite);
+
+      if (greenHook) greenTarget = { x: greenHook.position.x, y: greenHook.position.y };
+      if (pinkHook) pinkTarget = { x: pinkHook.position.x, y: pinkHook.position.y };
+    }
+
+    /* -------------------------------------------------------------
+      RESIZE
+    ------------------------------------------------------------- */
+    const skCanvas = document.getElementById('skeleton-canvas');
+    const skCtx = skCanvas.getContext('2d');
+
+    const cosmeticsCanvas = document.getElementById('cosmetics-canvas');
+    const cosmeticsCtx = cosmeticsCanvas.getContext('2d');
+
+    function resizeAll(){
+      vw = window.innerWidth;
+      vh = window.innerHeight;
+
+      render.canvas.width = vw;
+      render.canvas.height = vh;
+      render.options.width = vw;
+      render.options.height = vh;
+
+      skCanvas.width = vw;
+      skCanvas.height = vh;
+
+      cosmeticsCanvas.width = vw;
+      cosmeticsCanvas.height = vh;
+
+      const confettiCanvas = document.getElementById('confetti-canvas');
+      confettiCanvas.width = vw;
+      confettiCanvas.height = vh;
+
+      Body.setPosition(catchGround, { x: vw/2, y: vh + 500 });
+      Body.setPosition(leftWall, { x: -500, y: vh/2 });
+      Body.setPosition(rightWall, { x: vw + 500, y: vh/2 });
+      Body.setPosition(floor, { x: vw/2, y: vh - (floorThickness/2) + 2 });
+    }
+    window.addEventListener('resize', resizeAll);
+    resizeAll();
+
+    /* -------------------------------------------------------------
+      MEDIAPIPE HANDS + POINTER
+      NOTE: skeleton canvas is ABOVE wardrobe now, so lines stay visible.
+    ------------------------------------------------------------- */
+    const video = document.getElementById('video');
+    const lerp = (a,b,t)=> a + (b-a)*t;
+    const smoothPoint = (prev, next, t=0.35)=> ({ x: lerp(prev.x,next.x,t), y: lerp(prev.y,next.y,t) });
+
+    let lastLeft  = { x: vw*0.3, y: vh*0.3 };
+    let lastRight = { x: vw*0.7, y: vh*0.3 };
+
+    const pointer = { x: vw/2, y: vh/2, active:false, lastSeen:0 };
+
+    function onResults(results){
+      skCtx.save();
+      skCtx.clearRect(0,0,skCanvas.width, skCanvas.height);
+
+      const handsDetected = [];
+
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length){
+        for (let i=0; i<results.multiHandLandmarks.length; i++){
+          const landmarks = results.multiHandLandmarks[i];
+
+          // brighter lines so they pop over wardrobe
+          drawConnectors(skCtx, landmarks, HAND_CONNECTIONS, { color:'rgba(255,255,255,0.95)', lineWidth:2 });
+          drawLandmarks(skCtx, landmarks, { color:'rgba(255,42,109,0.95)', lineWidth:1, radius:3 });
+
+          const tip = landmarks[8];
+          handsDetected.push({ x: tip.x*vw, y: tip.y*vh });
+        }
+      }
+
+      // pointer (UI) = left-most hand in mirrored space
+      if (handsDetected.length){
+        const uiHands = handsDetected.map(h => ({ x: vw - h.x, y: h.y }));
+        uiHands.sort((a,b)=> a.x - b.x);
+        pointer.x = uiHands[0].x;
+        pointer.y = uiHands[0].y;
+        pointer.active = true;
+        pointer.lastSeen = performance.now();
+      } else {
+        pointer.active = false;
+      }
+
+      if (!gameStarted){
+        skCtx.restore();
+        return;
+      }
+
+      if (!handsDetected.length){
+        detachGreen();
+        detachPink();
+        skCtx.restore();
+        return;
+      }
+
+      if (handsDetected.length === 1){
+        const h = handsDetected[0];
+        if (h.x < vw*0.5){
+          lastLeft = smoothPoint(lastLeft, h, 0.23);
+          attachGreen(lastLeft.x, lastLeft.y);
+          detachPink();
+        } else {
+          lastRight = smoothPoint(lastRight, h, 0.23);
+          attachPink(lastRight.x, lastRight.y);
+          detachGreen();
+        }
+        skCtx.restore();
+        return;
+      }
+
+      const leftHand  = handsDetected[0];
+      const rightHand = handsDetected[handsDetected.length-1];
+
+      lastLeft = smoothPoint(lastLeft, leftHand, 0.23);
+      attachGreen(lastLeft.x, lastLeft.y);
+
+      lastRight = smoothPoint(lastRight, rightHand, 0.23);
+      attachPink(lastRight.x, lastRight.y);
+
+      skCtx.restore();
+    }
+
+    const hands = new Hands({ locateFile: (file)=> `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+    hands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6
+    });
+    hands.onResults(onResults);
+
+    let stream = null;
+    let processing = false;
+
+    async function startWithDevice(deviceId){
+      stopStream();
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{
+          deviceId: deviceId ? { exact: deviceId } : undefined,
+          width:{ ideal: 1280 },
+          height:{ ideal: 720 }
+        },
+        audio:false
+      });
+
+      video.srcObject = stream;
+      await video.play();
+
+      if (!processing){
+        processing = true;
+        const tick = async ()=>{
+          try{ await hands.send({ image: video }); } catch(e){}
+          requestAnimationFrame(tick);
+        };
+        tick();
+      }
+    }
+
+    function stopStream(){
+      if (stream){
+        stream.getTracks().forEach(t=> t.stop());
+        stream = null;
+      }
+    }
+
+    /* -------------------------------------------------------------
+      WARDROBE STATE + HOVER-TO-SELECT
+      Pink hat = wedding fascinator/white hat
+      Green hat = top hat
+    ------------------------------------------------------------- */
+    const wardrobe = document.getElementById('wardrobe');
+    const wardrobeTitle = document.getElementById('wardrobeTitle');
+    const outfitTitle = document.getElementById('outfitTitle');
+    const outfitSpecialTitle = document.getElementById('outfitSpecialTitle');
+    const outfitSpecialDesc = document.getElementById('outfitSpecialDesc');
+    const hatSpecialTitle = document.getElementById('hatSpecialTitle');
+    const hatSpecialDesc = document.getElementById('hatSpecialDesc');
+
+    const previewCanvas = document.getElementById('previewCanvas');
+    const pctx = previewCanvas.getContext('2d');
+
+    const wardrobeState = {
+      step: "pink",
+      pink: { hat:"none", outfit:"none" },   // hat: none|wedding
+      green:{ hat:"none", outfit:"none" }    // hat: none|top
+    };
+
+    const WARDROBE_STORAGE_KEY = "valentine-wardrobe-state";
+
+    function saveWardrobeState(){
+      try{
+        const payload = {
+          pink: wardrobeState.pink,
+          green: wardrobeState.green
+        };
+        localStorage.setItem(WARDROBE_STORAGE_KEY, JSON.stringify(payload));
+      } catch(e){}
+    }
+
+    function loadWardrobeState(){
+      try{
+        const raw = localStorage.getItem(WARDROBE_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed?.pink) wardrobeState.pink = parsed.pink;
+        if (parsed?.green) wardrobeState.green = parsed.green;
+      } catch(e){}
+    }
+
+    const HOLD_MS = 1200;
+    let hoverId = null;
+    let hoverStart = 0;
+
+    function setTargetProgress(el, p){
+      el.style.setProperty('--p', String(Math.max(0, Math.min(1, p))));
+    }
+
+    function setActiveChoicesUI(){
+      document.querySelectorAll('[data-hover-id="hat-none"],[data-hover-id="hat-special"],[data-hover-id="outfit-none"],[data-hover-id="outfit-special"]').forEach(el=>{
+        el.classList.remove('active');
+      });
+
+      const cur = wardrobeState.step === "pink" ? wardrobeState.pink : wardrobeState.green;
+
+      const hatNone = document.querySelector('[data-hover-id="hat-none"]');
+      const hatSpec  = document.querySelector('[data-hover-id="hat-special"]');
+      (cur.hat === "none" ? hatNone : hatSpec).classList.add('active');
+
+      const outNone = document.querySelector('[data-hover-id="outfit-none"]');
+      const outSpec = document.querySelector('[data-hover-id="outfit-special"]');
+      (cur.outfit === "none" ? outNone : outSpec).classList.add('active');
+    }
+
+    function updateWardrobeCopy(){
+      if (wardrobeState.step === "pink"){
+        wardrobeTitle.textContent = "Wardrobe: Pink Dino";
+        hatSpecialTitle.textContent = "Wedding Hat";
+        hatSpecialDesc.textContent = "White fascinator-ish hat. Bridal energy.";
+        outfitTitle.textContent = "Outfit";
+        outfitSpecialTitle.textContent = "Wedding Dress";
+        outfitSpecialDesc.textContent = "White dress. Main character energy.";
+      } else {
+        wardrobeTitle.textContent = "Wardrobe: Green Dino";
+        hatSpecialTitle.textContent = "Top Hat";
+        hatSpecialDesc.textContent = "Fancy hat. Like you own the place.";
+        outfitTitle.textContent = "Outfit";
+        outfitSpecialTitle.textContent = "Tuxedo";
+        outfitSpecialDesc.textContent = "Tux. Gentleman mode: ON.";
+      }
+    }
+
+    function openWardrobe(){
+      loadWardrobeState();
+      wardrobe.classList.add('active');
+      updateWardrobeCopy();
+      setActiveChoicesUI();
+      drawPreview();
+    }
+
+    function closeWardrobe(){
+      wardrobe.classList.remove('active');
+      document.querySelectorAll('.hover-target').forEach(el=>{
+        el.classList.remove('hovering');
+        setTargetProgress(el, 0);
+      });
+      hoverId = null;
+      hoverStart = 0;
+    }
+
+    function revertCurrent(){
+      if (wardrobeState.step === "pink"){
+        wardrobeState.pink.hat = "none";
+        wardrobeState.pink.outfit = "none";
+      } else {
+        wardrobeState.green.hat = "none";
+        wardrobeState.green.outfit = "none";
+      }
+      saveWardrobeState();
+      setActiveChoicesUI();
+      drawPreview();
+    }
+
+    function continueWardrobe(){
+      if (wardrobeState.step === "pink"){
+        wardrobeState.step = "green";
+        saveWardrobeState();
+        updateWardrobeCopy();
+        setActiveChoicesUI();
+        drawPreview();
+        spawnConfettiSmall();
+      } else {
+        wardrobeState.step = "done";
+        saveWardrobeState();
+        closeWardrobe();
+        startGame();
+      }
+    }
+
+    function selectHat(which){
+      const cur = wardrobeState.step === "pink" ? wardrobeState.pink : wardrobeState.green;
+      cur.hat = which;
+      saveWardrobeState();
+      setActiveChoicesUI();
+      drawPreview();
+    }
+
+    function selectOutfit(which){
+      const cur = wardrobeState.step === "pink" ? wardrobeState.pink : wardrobeState.green;
+      cur.outfit = which;
+      saveWardrobeState();
+      setActiveChoicesUI();
+      drawPreview();
+    }
+
+    function handleHoverCommit(id){
+      if (id === "hat-none") return selectHat("none");
+      if (id === "hat-special"){
+        if (wardrobeState.step === "pink") return selectHat("wedding");
+        return selectHat("top");
+      }
+      if (id === "outfit-none") return selectOutfit("none");
+      if (id === "outfit-special"){
+        if (wardrobeState.step === "pink") return selectOutfit("dress");
+        return selectOutfit("tux");
+      }
+      if (id === "revert") return revertCurrent();
+      if (id === "continue") return continueWardrobe();
+    }
+
+    function updateHoverSelection(){
+      if (!wardrobe.classList.contains('active')) return;
+
+      const targets = Array.from(wardrobe.querySelectorAll('.hover-target'));
+
+      if (!pointer.active){
+        targets.forEach(el=>{
+          el.classList.remove('hovering');
+          setTargetProgress(el, 0);
+        });
+        hoverId = null;
+        hoverStart = 0;
+        return;
+      }
+
+      let hit = null;
+      for (const el of targets){
+        const rect = el.getBoundingClientRect();
+        if (pointer.x >= rect.left && pointer.x <= rect.right && pointer.y >= rect.top && pointer.y <= rect.bottom){
+          hit = el;
+          break;
+        }
+      }
+
+      targets.forEach(el=>{
+        if (el !== hit){
+          el.classList.remove('hovering');
+          setTargetProgress(el, 0);
+        }
+      });
+
+      if (!hit){
+        hoverId = null;
+        hoverStart = 0;
+        return;
+      }
+
+      const id = hit.getAttribute('data-hover-id');
+
+      if (hoverId !== id){
+        hoverId = id;
+        hoverStart = performance.now();
+        hit.classList.add('hovering');
+        setTargetProgress(hit, 0);
+        return;
+      }
+
+      hit.classList.add('hovering');
+      const elapsed = performance.now() - hoverStart;
+      const p = Math.min(1, elapsed / HOLD_MS);
+      setTargetProgress(hit, p);
+
+      if (p >= 1){
+        hoverId = null;
+        hoverStart = 0;
+        setTargetProgress(hit, 0);
+        hit.classList.remove('hovering');
+        handleHoverCommit(id);
+      }
+    }
+
+    wardrobe.addEventListener('click', (e)=>{
+      const t = e.target.closest('.hover-target');
+      if (!t) return;
+      handleHoverCommit(t.getAttribute('data-hover-id'));
+    });
+
+    function drawPixelRect(ctx, x, y, w, h, color){
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+    }
+
+    function drawPreviewWeddingHat(ctx, baseX, baseY, px){
+      // white fascinator: small oval + tiny veil dots
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.fillRect(baseX, baseY, px*5, px*2);      // brim
+      ctx.fillRect(baseX + px*1, baseY - px, px*3, px); // crown
+      ctx.fillStyle = "rgba(255,42,109,0.55)";
+      ctx.fillRect(baseX + px*3, baseY - px*2, px*1, px*1); // flower dot
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      for (let i=0;i<6;i++){
+        ctx.fillRect(baseX + px*4 + (i%2)*px, baseY + px*(2+i), px*0.6, px*0.6);
+      }
+    }
+
+    function drawPreviewTopHat(ctx, baseX, baseY, px){
+      ctx.fillStyle = "rgba(0,0,0,0.9)";
+      ctx.fillRect(baseX, baseY + px*2, px*6, px); // brim
+      ctx.fillRect(baseX + px, baseY, px*4, px*2); // crown
+      ctx.fillStyle = "rgba(255,42,109,0.85)";
+      ctx.fillRect(baseX + px, baseY + px, px*4, px*0.5); // band
+    }
+
+    function drawPreview(){
+      const cur = wardrobeState.step === "pink" ? wardrobeState.pink : wardrobeState.green;
+      const isPink = wardrobeState.step === "pink";
+
+      const W = previewCanvas.width;
+      const H = previewCanvas.height;
+      pctx.clearRect(0,0,W,H);
+      pctx.imageSmoothingEnabled = false;
+
+      const grd = pctx.createRadialGradient(W*0.5, H*0.5, 20, W*0.5, H*0.5, Math.max(W,H)*0.7);
+      grd.addColorStop(0, "rgba(255,42,109,0.22)");
+      grd.addColorStop(1, "rgba(0,0,0,0)");
+      pctx.fillStyle = grd;
+      pctx.fillRect(0,0,W,H);
+
+      const px = 10;
+      const mat = isPink ? mirrorMatrix(deepCopyMatrix(shape)) : deepCopyMatrix(shape);
+
+      let minI=999, maxI=-1, minJ=999, maxJ=-1;
+      for (let i=0;i<mat.length;i++){
+        for (let j=0;j<mat[i].length;j++){
+          if (mat[i][j]){
+            minI = Math.min(minI, i); maxI = Math.max(maxI, i);
+            minJ = Math.min(minJ, j); maxJ = Math.max(maxJ, j);
+          }
+        }
+      }
+      const dW = (maxJ-minJ+1)*px;
+      const dH = (maxI-minI+1)*px;
+      const ox = Math.floor(W*0.5 - dW*0.5);
+      const oy = Math.floor(H*0.52 - dH*0.5);
+
+      const c1 = isPink ? "#dd5b82" : "#62d2a2";
+      const c2 = isPink ? "#CD4B72" : "#52C292";
+
+      for (let i=0;i<mat.length;i++){
+        for (let j=0;j<mat[i].length;j++){
+          if (!mat[i][j]) continue;
+          const col = ((j % 2) !== (i % 2 ? 0 : 1)) ? c1 : c2;
+          drawPixelRect(pctx, ox + (j-minJ)*px, oy + (i-minI)*px, px, px, col);
+        }
+      }
+
+      // eye
+      if (isPink){
+        drawPixelRect(pctx, ox + (2-minJ)*px, oy + (2-minI)*px, px, px, "#000");
+      } else {
+        drawPixelRect(pctx, ox + (9-minJ)*px, oy + (2-minI)*px, px, px, "#000");
+      }
+
+      // HATS
+      if (cur.hat !== "none"){
+        const hatY = oy + (0-minI)*px - px*2;
+        const hatX = isPink ? (ox + (1-minJ)*px) : (ox + (6-minJ)*px);
+        if (isPink) drawPreviewWeddingHat(pctx, hatX, hatY, px);
+        else drawPreviewTopHat(pctx, hatX, hatY, px);
+      }
+
+      // OUTFITS
+      if (isPink && cur.outfit === "dress"){
+        const cx = Math.round(ox + (dW/2) - px*2);
+        const cy = Math.round(oy + px*6);
+        drawPixelRect(pctx, cx, cy, px*4, px*3, "rgba(255,255,255,0.92)");
+        drawPixelRect(pctx, cx - px, cy + px*3, px*6, px*2, "rgba(255,255,255,0.85)");
+        drawPixelRect(pctx, cx - px*2, cy + px*5, px*8, px, "rgba(255,255,255,0.75)");
+      }
+      if (!isPink && cur.outfit === "tux"){
+        const cx = Math.round(ox + (dW/2) - px*2);
+        const cy = Math.round(oy + px*6);
+        drawPixelRect(pctx, cx, cy, px*4, px*4, "rgba(0,0,0,0.86)");
+        drawPixelRect(pctx, cx, cy, px, px*2, "rgba(255,255,255,0.85)");
+        drawPixelRect(pctx, cx + px*3, cy, px, px*2, "rgba(255,255,255,0.85)");
+        drawPixelRect(pctx, cx + px*2, cy + px, px, px*2, "rgba(255,42,109,0.85)");
+      }
+    }
+
+    function wardrobeLoop(){
+      updateHoverSelection();
+      requestAnimationFrame(wardrobeLoop);
+    }
+    wardrobeLoop();
+
+    /* -------------------------------------------------------------
+      COSMETICS RENDERING (OVERLAY CANVAS)
+    ------------------------------------------------------------- */
+    function drawTopHatOverlay(ctx, anchor, angle){
+      ctx.save();
+      ctx.translate(anchor.x, anchor.y);
+      ctx.rotate(angle);
+      const s = size * 0.9;
+      ctx.fillStyle = "rgba(0,0,0,0.88)";
+      ctx.fillRect(-s*1.8, s*0.4, s*3.6, s*0.6);
+      ctx.fillRect(-s*1.2, -s*1.4, s*2.4, s*1.8);
+      ctx.fillStyle = "rgba(255,42,109,0.85)";
+      ctx.fillRect(-s*1.2, -s*0.35, s*2.4, s*0.25);
+      ctx.restore();
+    }
+
+    function drawWeddingHatOverlay(ctx, anchor, angle){
+      // white fascinator-ish hat for pink dino
+      ctx.save();
+      ctx.translate(anchor.x, anchor.y);
+      ctx.rotate(angle);
+      const s = size * 0.95;
+
+      // brim
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.fillRect(-s*1.9, -s*0.2, s*3.8, s*0.9);
+
+      // crown
+      ctx.fillRect(-s*1.0, -s*1.1, s*2.0, s*0.9);
+
+      // little flower accent
+      ctx.fillStyle = "rgba(255,42,109,0.55)";
+      ctx.fillRect(s*0.7, -s*1.5, s*0.35, s*0.35);
+
+      // veil dots
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      for (let i=0;i<9;i++){
+        const dx = s*1.2 + (i%3)*s*0.35;
+        const dy = s*0.6 + Math.floor(i/3)*s*0.35;
+        ctx.fillRect(dx, dy, s*0.18, s*0.18);
+      }
+
+      ctx.restore();
+    }
+
+    function drawDressOverlay(ctx, anchor, angle){
+      ctx.save();
+      ctx.translate(anchor.x, anchor.y);
+      ctx.rotate(angle);
+      const s = size * 0.95;
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.fillRect(-s*2.0, -s*0.2, s*4.0, s*2.6);
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillRect(-s*2.8, s*2.2, s*5.6, s*0.8);
+      ctx.restore();
+    }
+
+    function drawTuxOverlay(ctx, anchor, angle){
+      ctx.save();
+      ctx.translate(anchor.x, anchor.y);
+      ctx.rotate(angle);
+      const s = size * 0.95;
+      ctx.fillStyle = "rgba(0,0,0,0.86)";
+      ctx.fillRect(-s*2.0, -s*0.8, s*4.0, s*3.4);
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.fillRect(-s*0.9, -s*0.8, s*0.6, s*1.5);
+      ctx.fillRect(s*0.3, -s*0.8, s*0.6, s*1.5);
+      ctx.fillStyle = "rgba(255,42,109,0.85)";
+      ctx.fillRect(-s*0.15, -s*0.2, s*0.3, s*2.0);
+      ctx.restore();
+    }
+
+    function renderCosmetics(){
+      cosmeticsCtx.clearRect(0,0,vw,vh);
+      if (!gameStarted || !greenComposite || !pinkComposite) return;
+
+      const gBox = getBoundingBox(greenComposite);
+      const pBox = getBoundingBox(pinkComposite);
+
+      const avgAngle = (comp)=>{
+        const bodies = comp.bodies;
+        if (!bodies.length) return 0;
+        const ySorted = [...bodies].sort((a,b)=> a.position.y - b.position.y);
+        const pick = ySorted.slice(0, Math.max(6, Math.floor(ySorted.length*0.2)));
+        let s = 0;
+        pick.forEach(b => s += b.angle);
+        return s / pick.length;
+      };
+
+      const gAngle = avgAngle(greenComposite);
+      const pAngle = avgAngle(pinkComposite);
+
+      const gHatAnchor = greenHook ? { x: greenHook.position.x, y: greenHook.position.y - size*1.2 } : { x:gBox.cx, y:gBox.minY - size };
+      const pHatAnchor = pinkHook  ? { x: pinkHook.position.x,  y: pinkHook.position.y  - size*1.2 } : { x:pBox.cx, y:pBox.minY - size };
+
+      const gTorso = { x: gBox.cx, y: gBox.cy + size*0.2 };
+      const pTorso = { x: pBox.cx, y: pBox.cy + size*0.2 };
+
+      // Hats
+      if (wardrobeState.green.hat === "top") drawTopHatOverlay(cosmeticsCtx, gHatAnchor, gAngle);
+      if (wardrobeState.pink.hat  === "wedding") drawWeddingHatOverlay(cosmeticsCtx, pHatAnchor, pAngle);
+
+      // Outfits
+      if (wardrobeState.green.outfit === "tux") drawTuxOverlay(cosmeticsCtx, gTorso, gAngle);
+      if (wardrobeState.pink.outfit  === "dress") drawDressOverlay(cosmeticsCtx, pTorso, pAngle);
+    }
+
+    Events.on(engine, 'afterRender', renderCosmetics);
+
+    /* -------------------------------------------------------------
+      GAME START (AFTER WARDROBE)
+    ------------------------------------------------------------- */
+    let gameStarted = false;
+
+    function startGame(){
+      gameStarted = true;
+      spawnDinosDropIn();
+
+      holdCount = 0;
+      isModalOpen = false;
+      isKissing = false;
+      progCont.style.opacity = 0;
+      progBar.style.width = '0%';
+      const inst = document.getElementById('instruction');
+      inst.innerHTML = "Bring them together<br>Make them Kiss";
+      inst.style.color = "rgba(255,255,255,0.9)";
+    }
+
+    /* -------------------------------------------------------------
+      KISS DETECTION
+      Now: show bouquet overlay for ~7.5s, THEN open poem modal.
+    ------------------------------------------------------------- */
+    const progCont = document.getElementById('prog-cont');
+    const progBar  = document.getElementById('prog-bar');
+    const modal    = document.getElementById('modal');
+    const bouquetOverlay = document.getElementById('bouquetOverlay');
+
+    let holdCount = 0;
+    const HOLD_TARGET = 130;
+    let isModalOpen = false;
+    let isKissing = false;
+    let successTriggered = false;
+
+    Events.on(engine, 'afterUpdate', ()=>{
+      if (!gameStarted) return;
+      updateHandConstraints();
+
+      if (!greenHook || !pinkHook) return;
+      if (isModalOpen || successTriggered) return;
+
+      const dist = Vector.magnitude(Vector.sub(greenHook.position, pinkHook.position));
+      const threshold = size * 3.5;
+
+      if (dist < threshold){
+        progCont.style.opacity = 1;
+        holdCount++;
+        progBar.style.width = `${Math.min(100, (holdCount / HOLD_TARGET) * 100)}%`;
+
+        if (!isKissing){
+          isKissing = true;
+          const inst = document.getElementById('instruction');
+          inst.innerHTML = "HOLD...";
+          inst.style.color = "#ff2a6d";
+        }
+
+        if (holdCount >= HOLD_TARGET) triggerSuccess();
+      } else {
+        holdCount = Math.max(0, holdCount - 2);
+        if (holdCount < 10){
+          progCont.style.opacity = 0;
+          progBar.style.width = '0%';
+          isKissing = false;
+          const inst = document.getElementById('instruction');
+          inst.innerHTML = "Bring them together<br>Make them Kiss";
+          inst.style.color = "rgba(255,255,255,0.9)";
+        }
+      }
+    });
+
+    function triggerSuccess(){
+      successTriggered = true;
+
+      // freeze hand constraints so they don't fling during the sequence
+      detachGreen();
+      detachPink();
+
+      spawnConfetti();
+
+      // show bouquet overlay BIG, center, for 7–8 seconds
+      bouquetOverlay.classList.add('show');
+
+      const showMs = 7600; // ~7.6s
+      setTimeout(()=>{
+        bouquetOverlay.classList.remove('show');
+        openPoemModal();
+      }, showMs);
+    }
+
+    function openPoemModal(){
+      isModalOpen = true;
+      modal.classList.add('active');
+      showStep(1);
+    }
+
+    /* -------------------------------------------------------------
+      PROPOSAL MODAL LOGIC
+    ------------------------------------------------------------- */
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const step3 = document.getElementById('step-3');
+    const step4 = document.getElementById('step-4');
+    const outcome = document.getElementById('outcome');
+    const yesImageWrap = document.getElementById('yesImageWrap');
+
+    function showStep(n){
+      step1.classList.toggle('hidden', n !== 1);
+      step2.classList.toggle('hidden', n !== 2);
+      step3.classList.toggle('hidden', n !== 3);
+      step4.classList.toggle('hidden', n !== 4);
+    }
+
+    document.getElementById('continue-btn').addEventListener('click', ()=> showStep(2));
+
+    document.getElementById('yes-btn').addEventListener('click', ()=>{
+      showStep(3);
+      yesImageWrap.style.display = "flex";
+      outcome.innerText = "You just made my whole year. ❤️";
+      outcome.classList.add('show');
+      spawnConfetti();
+      
+      // After a short delay, show the starfield animation
+      setTimeout(() => {
+        showStep(4);
+        initStarfield();
+      }, 3000);
+    });
+
+    document.getElementById('talk-btn').addEventListener('click', ()=>{
+      showStep(3);
+      yesImageWrap.style.display = "none";
+      outcome.innerText = "That's totally okay. I'm here. 💛";
+      outcome.classList.add('show');
+    });
+
+    /* -------------------------------------------------------------
+      CLICK-TO-REVEAL WORDS (with fade-in animation)
+    ------------------------------------------------------------- */
+    function makeRevealWord(word){
+      const el = document.createElement('span');
+      el.className = 'reveal-word';
+      el.innerHTML = `<span class="hint"></span><span class="word">${word}</span>`;
+      el.addEventListener('click', ()=>{
+        if (el.classList.contains('revealed')) return;
+        el.classList.add('revealed');
+      });
+      return el;
+    }
+    function buildRevealLine(containerId, words){
+      const line = document.getElementById(containerId);
+      line.innerHTML = '';
+      words.forEach(w => line.appendChild(makeRevealWord(w)));
+    }
+    buildRevealLine('salutation-line', ['Dear', 'Ashley,']);
+    buildRevealLine('question-line', ['May', 'i', 'be', 'your', 'boyfriend?']);
+
+    /* -------------------------------------------------------------
+      CONFETTI
+    ------------------------------------------------------------- */
+    const confettiCanvas = document.getElementById('confetti-canvas');
+    const confettiCtx = confettiCanvas.getContext('2d');
+    const confettis = [];
+
+    function spawnConfetti(){
+      return;
+      const colors = ['#ff2a6d', '#ffffff', '#8a0303', '#62d2a2', '#dd5b82'];
+      for (let i=0;i<160;i++){
+        confettis.push({
+          x: vw/2, y: vh/2,
+          vx: (Math.random()-0.5)*18,
+          vy: (Math.random()-1)*18 - 6,
+          size: Math.random()*8 + 4,
+          color: colors[(Math.random()*colors.length)|0],
+          life: 1,
+          rot: Math.random()*360,
+          rotSpd: (Math.random()-0.5)*10
+        });
+      }
+      animateConfetti();
+    }
+
+    function spawnConfettiSmall(){
+      return;
+      const colors = ['#ff2a6d', '#ffffff', '#62d2a2', '#dd5b82'];
+      for (let i=0;i<70;i++){
+        confettis.push({
+          x: vw/2, y: vh*0.35,
+          vx: (Math.random()-0.5)*13,
+          vy: (Math.random()-1)*13 - 4,
+          size: Math.random()*6 + 3,
+          color: colors[(Math.random()*colors.length)|0],
+          life: 0.9,
+          rot: Math.random()*360,
+          rotSpd: (Math.random()-0.5)*10
+        });
+      }
+      animateConfetti();
+    }
+
+    function animateConfetti(){
+      if (!confettis.length) return;
+      confettiCtx.clearRect(0,0,vw,vh);
+
+      for (let i=confettis.length-1;i>=0;i--){
+        const p = confettis[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.45;
+        p.rot += p.rotSpd;
+        p.life -= 0.012;
+
+        confettiCtx.save();
+        confettiCtx.translate(p.x, p.y);
+        confettiCtx.rotate(p.rot*Math.PI/180);
+        confettiCtx.globalAlpha = p.life;
+        confettiCtx.fillStyle = p.color;
+        confettiCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+        confettiCtx.restore();
+
+        if (p.life <= 0 || p.y > vh) confettis.splice(i,1);
+      }
+
+      if (confettis.length) requestAnimationFrame(animateConfetti);
+    }
+
+    /* -------------------------------------------------------------
+      CAMERA PICKER BOOT FLOW -> OPEN WARDROBE (NOT GAME)
+    ------------------------------------------------------------- */
+    const boot = document.getElementById('boot');
+    const cameraSelect = document.getElementById('cameraSelect');
+    const refreshCams = document.getElementById('refreshCams');
+    const startBtn = document.getElementById('startBtn');
+    const bootError = document.getElementById('bootError');
+
+    function showBootError(msg){
+      bootError.textContent = msg;
+      bootError.classList.add('show');
+    }
+    function clearBootError(){
+      bootError.textContent = '';
+      bootError.classList.remove('show');
+    }
+
+    async function listCameras(){
+      clearBootError();
+      cameraSelect.innerHTML = '';
+
+      let devices = [];
+      try {
+        devices = await navigator.mediaDevices.enumerateDevices();
+      } catch (e) {
+        showBootError("Couldn’t list cameras. Check permissions, then refresh.");
+        return;
+      }
+      const cams = devices.filter(d => d.kind === 'videoinput');
+
+      if (!cams.length){
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'No cameras found';
+        cameraSelect.appendChild(opt);
+        return;
+      }
+
+      cams.forEach((cam, idx)=>{
+        const opt = document.createElement('option');
+        opt.value = cam.deviceId;
+        opt.textContent = cam.label || `Camera ${idx + 1}`;
+        cameraSelect.appendChild(opt);
+      });
+    }
+
+    async function ensurePermissionThenList(){
+      clearBootError();
+      try{
+        const temp = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
+        temp.getTracks().forEach(t=>t.stop());
+      } catch(e){}
+      await listCameras();
+    }
+
+    refreshCams.addEventListener('click', async ()=>{ await ensurePermissionThenList(); });
+
+    startBtn.addEventListener('click', async ()=>{
+      clearBootError();
+      try{
+        if (!cameraSelect.options.length || cameraSelect.options[0]?.textContent === 'No cameras found'){
+          await ensurePermissionThenList();
+        }
+        const deviceId = cameraSelect.value || null;
+        await startWithDevice(deviceId);
+        boot.style.display = 'none';
+
+        wardrobeState.step = "pink";
+        openWardrobe();
+      } catch(e){
+        showBootError("Couldn’t start the camera. Check permissions, then refresh and try again.");
+        console.error(e);
+      }
+    });
+
+    (async ()=>{
+      if (!navigator.mediaDevices?.getUserMedia){
+        showBootError("Your browser doesn’t support camera access (getUserMedia). Try Chrome/Edge.");
+        return;
+      }
+      await listCameras();
+    })();
+
+    if (navigator.mediaDevices?.addEventListener){
+      navigator.mediaDevices.addEventListener('devicechange', async ()=> {
+        await listCameras();
+      });
+    }
+
+    window.addEventListener('beforeunload', stopStream);
+
+    /* -------------------------------------------------------------
+      STARFIELD ANIMATION (from valentine-website)
+    ------------------------------------------------------------- */
+    function initStarfield(){
+      const canvas = document.getElementById("starfield");
+      if (!canvas) return;
+      
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const context = canvas.getContext("2d");
+      const stars = 500;
+      const colorrange = [0, 60, 240];
+      const starArray = [];
+
+      function getRandom(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      // Initialize stars with random opacity values
+      for (let i = 0; i < stars; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const radius = Math.random() * 1.2;
+        const hue = colorrange[getRandom(0, colorrange.length - 1)];
+        const sat = getRandom(50, 100);
+        const opacity = Math.random();
+        starArray.push({ x, y, radius, hue, sat, opacity });
+      }
+
+      let frameNumber = 0;
+      let opacity = 0;
+      let secondOpacity = 0;
+      let thirdOpacity = 0;
+
+      let baseFrame = context.getImageData(0, 0, canvas.width, canvas.height);
+
+      function drawStars() {
+        for (let i = 0; i < stars; i++) {
+          const star = starArray[i];
+          context.beginPath();
+          context.arc(star.x, star.y, star.radius, 0, 360);
+          context.fillStyle = "hsla(" + star.hue + ", " + star.sat + "%, 88%, " + star.opacity + ")";
+          context.fill();
+        }
+      }
+
+      function updateStars() {
+        for (let i = 0; i < stars; i++) {
+          if (Math.random() > 0.99) {
+            starArray[i].opacity = Math.random();
+          }
+        }
+      }
+
+      function drawTextWithLineBreaks(lines, x, y, fontSize, lineHeight) {
+        lines.forEach((line, index) => {
+          context.fillText(line, x, y + index * (fontSize + lineHeight));
+        });
+      }
+
+      function drawText() {
+        const fontSize = Math.min(30, window.innerWidth / 24);
+        const lineHeight = 8;
+
+        context.font = fontSize + "px 'Outfit', sans-serif";
+        context.textAlign = "center";
+        
+        // glow effect with red color
+        context.shadowColor = "rgba(138, 3, 3, 1)";
+        context.shadowBlur = 8;
+        context.shadowOffsetX = 0;
+        context.shadowOffsetY = 0;
+
+        if(frameNumber < 250){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          context.fillText("everyday day I cannot believe how lucky I am", canvas.width/2, canvas.height/2);
+          opacity = opacity + 0.01;
+        }
+        if(frameNumber >= 250 && frameNumber < 500){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          context.fillText("everyday day I cannot believe how lucky I am", canvas.width/2, canvas.height/2);
+          opacity = opacity - 0.01;
+        }
+
+        if(frameNumber == 500){
+          opacity = 0;
+        }
+        if(frameNumber > 500 && frameNumber < 750){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          if (window.innerWidth < 600) {
+            drawTextWithLineBreaks(["amongst trillions and trillions of stars,", "over billions of years"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
+          } else {
+            context.fillText("amongst trillions and trillions of stars, over billions of years", canvas.width/2, canvas.height/2);
+          }
+          opacity = opacity + 0.01;
+        }
+        if(frameNumber >= 750 && frameNumber < 1000){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          if (window.innerWidth < 600) {
+            drawTextWithLineBreaks(["amongst trillions and trillions of stars,", "over billions of years"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
+          } else {
+            context.fillText("amongst trillions and trillions of stars, over billions of years", canvas.width/2, canvas.height/2);
+          }
+          opacity = opacity - 0.01;
+        }
+
+        if(frameNumber == 1000){
+          opacity = 0;
+        }
+        if(frameNumber > 1000 && frameNumber < 1250){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          context.fillText("to be alive, and to get to spend this life with you", canvas.width/2, canvas.height/2);
+          opacity = opacity + 0.01;
+        }
+        if(frameNumber >= 1250 && frameNumber < 1500){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          context.fillText("to be alive, and to get to spend this life with you", canvas.width/2, canvas.height/2);
+          opacity = opacity - 0.01;
+        }
+
+        if(frameNumber == 1500){
+          opacity = 0;
+        }
+        if(frameNumber > 1500 && frameNumber < 1750){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          context.fillText("is so incredibly, unfathomably unlikely", canvas.width/2, canvas.height/2);
+          opacity = opacity + 0.01;
+        }
+        if(frameNumber >= 1750 && frameNumber < 2000){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          context.fillText("is so incredibly, unfathomably unlikely", canvas.width/2, canvas.height/2);
+          opacity = opacity - 0.01;
+        }
+
+        if(frameNumber == 2000){
+          opacity = 0;
+        }
+        if(frameNumber > 2000 && frameNumber < 2250){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          if (window.innerWidth < 600) {
+            drawTextWithLineBreaks(["and yet here I am to get the impossible", "chance to get to know you"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
+          } else {
+            context.fillText("and yet here I am to get the impossible chance to get to know you", canvas.width/2, canvas.height/2);
+          }
+          opacity = opacity + 0.01;
+        }
+        if(frameNumber >= 2250 && frameNumber < 2500){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          if (window.innerWidth < 600) {
+            drawTextWithLineBreaks(["and yet here I am to get the impossible", "chance to get to know you"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
+          } else {
+            context.fillText("and yet here I am to get the impossible chance to get to know you", canvas.width/2, canvas.height/2);
+          }
+          opacity = opacity - 0.01;
+        }
+
+        if(frameNumber == 2500){
+          opacity = 0;
+        }
+        if(frameNumber > 2500 && frameNumber < 99999){
+          context.fillStyle = `rgba(138, 3, 3, ${opacity})`;
+          if (window.innerWidth < 600) {
+            drawTextWithLineBreaks(["I love you so much Ashley, more than", "all the time and space in the universe can contain"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
+          } else {
+            context.fillText("I love you so much Ashley, more than all the time and space in the universe can contain", canvas.width/2, canvas.height/2);
+          }
+          opacity = opacity + 0.01;
+        }
+        
+        if(frameNumber >= 2750 && frameNumber < 99999){
+          context.fillStyle = `rgba(138, 3, 3, ${secondOpacity})`;
+          if (window.innerWidth < 600) {
+            drawTextWithLineBreaks(["and I can't wait to spend all the time in", "the world to share that love with you!"], canvas.width / 2, (canvas.height/2 + 60), fontSize, lineHeight);
+          } else {
+            context.fillText("and I can't wait to spend all the time in the world to share that love with you!", canvas.width/2, (canvas.height/2 + 50));
+          }
+          secondOpacity = secondOpacity + 0.01;
+        }
+
+        if(frameNumber >= 3000 && frameNumber < 99999){
+          context.fillStyle = `rgba(138, 3, 3, ${thirdOpacity})`;
+          context.fillText("Happy Valentine's Day <3", canvas.width/2, (canvas.height/2 + 120));
+          thirdOpacity = thirdOpacity + 0.01;
+
+          const button = document.getElementById('valentinesButton');
+          if (button) button.style.display = "block";
+        }   
+
+        // Reset the shadow effect after drawing the text
+        context.shadowColor = "transparent";
+        context.shadowBlur = 0;
+        context.shadowOffsetX = 0;
+        context.shadowOffsetY = 0;
+      }
+
+      function draw() {
+        context.putImageData(baseFrame, 0, 0);
+        drawStars();
+        updateStars();
+        drawText();
+
+        if (frameNumber < 99999) {
+          frameNumber++;
+        }
+        requestAnimationFrame(draw);
+      }
+
+      // Button click handler
+      const button = document.getElementById('valentinesButton');
+      if (button) {
+        button.addEventListener('click', async () => {
+          if (button.textContent === "Click Me! ❤") {
+            button.textContent = "loading...";
+            button.disabled = true;
+            
+            try {
+              const response = await fetch('send_mail.php', {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                }
+              });
+              
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              
+              const contentType = response.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                if (data.success) {
+                  button.textContent = "Check Your Email 🙃";
+                } else {
+                  button.textContent = "Error 😞";
+                  button.disabled = false;
+                  console.error('Email error:', data.message);
+                }
+              } else {
+                // Handle non-JSON response (might be PHP error output)
+                const text = await response.text();
+                console.error('Non-JSON response:', text);
+                button.textContent = "Error 😞";
+                button.disabled = false;
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              button.textContent = "Error 😞";
+              button.disabled = false;
+            }
+          }
+        });
+      }
+
+      // Handle resize
+      window.addEventListener('resize', function () {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        baseFrame = context.getImageData(0, 0, canvas.width, canvas.height);
+      });
+
+      requestAnimationFrame(draw);
+    }
+  </script>
+</body>
+</html>
