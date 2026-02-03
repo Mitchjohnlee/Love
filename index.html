@@ -2424,19 +2424,19 @@ But for the years to come?
         context.font = fontSize + "px 'Outfit', sans-serif";
         context.textAlign = "center";
         
-        // glow effect with pink color
-        context.shadowColor = "rgba(255, 192, 203, 1)";
+        // glow effect with yellow color
+        context.shadowColor = "rgba(255, 255, 0, 1)";
         context.shadowBlur = 8;
         context.shadowOffsetX = 0;
         context.shadowOffsetY = 0;
 
         if(frameNumber < 250){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           context.fillText("everyday day I cannot believe how lucky I am", canvas.width/2, canvas.height/2);
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 250 && frameNumber < 500){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           context.fillText("everyday day I cannot believe how lucky I am", canvas.width/2, canvas.height/2);
           opacity = opacity - 0.01;
         }
@@ -2445,7 +2445,7 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 500 && frameNumber < 750){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["amongst trillions and trillions of stars,", "over billions of years"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2454,7 +2454,7 @@ But for the years to come?
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 750 && frameNumber < 1000){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["amongst trillions and trillions of stars,", "over billions of years"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2467,12 +2467,12 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 1000 && frameNumber < 1250){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           context.fillText("to be alive, and to get to spend this life with you", canvas.width/2, canvas.height/2);
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 1250 && frameNumber < 1500){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           context.fillText("to be alive, and to get to spend this life with you", canvas.width/2, canvas.height/2);
           opacity = opacity - 0.01;
         }
@@ -2481,12 +2481,12 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 1500 && frameNumber < 1750){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           context.fillText("is so incredibly, unfathomably unlikely", canvas.width/2, canvas.height/2);
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 1750 && frameNumber < 2000){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           context.fillText("is so incredibly, unfathomably unlikely", canvas.width/2, canvas.height/2);
           opacity = opacity - 0.01;
         }
@@ -2495,7 +2495,7 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 2000 && frameNumber < 2250){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["and yet here I am to get the impossible", "chance to get to know you"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2504,7 +2504,7 @@ But for the years to come?
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 2250 && frameNumber < 2500){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["and yet here I am to get the impossible", "chance to get to know you"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2517,7 +2517,7 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 2500 && frameNumber < 99999){
-          context.fillStyle = `rgba(255, 192, 203, ${opacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["I love you so much Ashley, more than", "all the time and space in the universe can contain"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2527,7 +2527,7 @@ But for the years to come?
         }
         
         if(frameNumber >= 2750 && frameNumber < 99999){
-          context.fillStyle = `rgba(255, 192, 203, ${secondOpacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${secondOpacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["and I can't wait to spend all the time in", "the world to share that love with you!"], canvas.width / 2, (canvas.height/2 + 60), fontSize, lineHeight);
           } else {
@@ -2537,7 +2537,7 @@ But for the years to come?
         }
 
         if(frameNumber >= 3000 && frameNumber < 99999){
-          context.fillStyle = `rgba(255, 192, 203, ${thirdOpacity})`;
+          context.fillStyle = `rgba(255, 255, 0, ${thirdOpacity})`;
           context.fillText("Happy Valentine's Day <3", canvas.width/2, (canvas.height/2 + 120));
           thirdOpacity = thirdOpacity + 0.01;
 
