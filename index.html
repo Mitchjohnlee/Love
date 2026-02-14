@@ -809,10 +809,33 @@
       min-height:100vh;
       overflow:hidden;
     }
+
+    /* Background Music */
+    #bgMusic{
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      z-index:100;
+      opacity:0.6;
+      width:200px;
+      transition:opacity 0.3s ease;
+      border-radius:8px;
+    }
+    #bgMusic:hover{
+      opacity:1;
+    }
+    /* Hide controls if you want completely background music */
+    /* #bgMusic{ display:none; } */
   </style>
 </head>
 
 <body>
+  <!-- Background Music -->
+  <audio id="bgMusic" loop>
+    <source src="ValentinesSong.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
   <canvas id="three-bg"></canvas>
   <video id="video" playsinline autoplay muted></video>
 
@@ -2619,6 +2642,52 @@ But for the years to come?
 
       requestAnimationFrame(draw);
     }
+
+    /* -------------------------------------------------------------
+      BACKGROUND MUSIC
+    ------------------------------------------------------------- */
+    (function initBackgroundMusic(){
+      const bgMusic = document.getElementById('bgMusic');
+      if (!bgMusic) return;
+
+      // Set volume to soft (30% volume)
+      bgMusic.volume = 0.3;
+
+      // Try to play music (may require user interaction first due to browser autoplay policies)
+      const playMusic = () => {
+        bgMusic.play().catch(err => {
+          console.log('Autoplay prevented. Music will play after user interaction.');
+        });
+      };
+
+      // Try to play immediately when page loads
+      playMusic();
+
+      // Play after any user interaction (click, touch, etc.)
+      const playOnInteraction = () => {
+        if (bgMusic.paused) {
+          playMusic();
+        }
+      };
+
+      // Listen for various user interactions
+      document.addEventListener('click', playOnInteraction, { once: true });
+      document.addEventListener('touchstart', playOnInteraction, { once: true });
+      document.addEventListener('keydown', playOnInteraction, { once: true });
+
+      // Also try to play when video starts (if video autoplays, this might work)
+      const video = document.getElementById('video');
+      if (video) {
+        video.addEventListener('play', () => {
+          if (bgMusic.paused) {
+            playMusic();
+          }
+        }, { once: true });
+      }
+
+      // Ensure music loops (already set in HTML, but ensure it stays)
+      bgMusic.loop = true;
+    })();
   </script>
 </body>
 </html>
