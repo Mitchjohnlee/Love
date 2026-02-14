@@ -810,6 +810,29 @@
       overflow:hidden;
     }
 
+    /* Fullscreen Video Overlay */
+    #fullscreen-video{
+      position:fixed;
+      inset:0;
+      z-index:200;
+      background:#000;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 1.5s ease-in-out;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    #fullscreen-video.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+    #fullscreen-video video{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+
     /* Background Music */
     #bgMusic{
       position:fixed;
@@ -1028,6 +1051,14 @@ But for the years to come?
         <button id="valentinesButton">Click Me! ❤</button>
       </div>
     </div>
+  </div>
+
+  <!-- Fullscreen Video Overlay -->
+  <div id="fullscreen-video">
+    <video id="valentinesVideo" autoplay muted>
+      <source src="ValentinesVideo.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
   </div>
 
   <!-- libs -->
@@ -2447,19 +2478,19 @@ But for the years to come?
         context.font = fontSize + "px 'Outfit', sans-serif";
         context.textAlign = "center";
         
-        // glow effect with yellow color
-        context.shadowColor = "rgba(255, 255, 0, 1)";
+        // glow effect with purple color
+        context.shadowColor = "rgba(147, 51, 234, 1)";
         context.shadowBlur = 8;
         context.shadowOffsetX = 0;
         context.shadowOffsetY = 0;
 
         if(frameNumber < 250){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           context.fillText("everyday day I cannot believe how lucky I am", canvas.width/2, canvas.height/2);
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 250 && frameNumber < 500){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           context.fillText("everyday day I cannot believe how lucky I am", canvas.width/2, canvas.height/2);
           opacity = opacity - 0.01;
         }
@@ -2468,7 +2499,7 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 500 && frameNumber < 750){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["amongst trillions and trillions of stars,", "over billions of years"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2477,7 +2508,7 @@ But for the years to come?
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 750 && frameNumber < 1000){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["amongst trillions and trillions of stars,", "over billions of years"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2490,12 +2521,12 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 1000 && frameNumber < 1250){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           context.fillText("to be alive, and to get to spend this life with you", canvas.width/2, canvas.height/2);
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 1250 && frameNumber < 1500){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           context.fillText("to be alive, and to get to spend this life with you", canvas.width/2, canvas.height/2);
           opacity = opacity - 0.01;
         }
@@ -2504,12 +2535,12 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 1500 && frameNumber < 1750){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           context.fillText("is so incredibly, unfathomably unlikely", canvas.width/2, canvas.height/2);
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 1750 && frameNumber < 2000){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           context.fillText("is so incredibly, unfathomably unlikely", canvas.width/2, canvas.height/2);
           opacity = opacity - 0.01;
         }
@@ -2518,7 +2549,7 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 2000 && frameNumber < 2250){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["and yet here I am to get the impossible", "chance to get to know you"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2527,7 +2558,7 @@ But for the years to come?
           opacity = opacity + 0.01;
         }
         if(frameNumber >= 2250 && frameNumber < 2500){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["and yet here I am to get the impossible", "chance to get to know you"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2540,7 +2571,7 @@ But for the years to come?
           opacity = 0;
         }
         if(frameNumber > 2500 && frameNumber < 99999){
-          context.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${opacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["I love you so much Ashley, more than", "all the time and space in the universe can contain"], canvas.width / 2, canvas.height / 2, fontSize, lineHeight);
           } else {
@@ -2550,7 +2581,7 @@ But for the years to come?
         }
         
         if(frameNumber >= 2750 && frameNumber < 99999){
-          context.fillStyle = `rgba(255, 255, 0, ${secondOpacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${secondOpacity})`;
           if (window.innerWidth < 600) {
             drawTextWithLineBreaks(["and I can't wait to spend all the time in", "the world to share that love with you!"], canvas.width / 2, (canvas.height/2 + 60), fontSize, lineHeight);
           } else {
@@ -2560,7 +2591,7 @@ But for the years to come?
         }
 
         if(frameNumber >= 3000 && frameNumber < 99999){
-          context.fillStyle = `rgba(255, 255, 0, ${thirdOpacity})`;
+          context.fillStyle = `rgba(147, 51, 234, ${thirdOpacity})`;
           context.fillText("Happy Valentine's Day <3", canvas.width/2, (canvas.height/2 + 120));
           thirdOpacity = thirdOpacity + 0.01;
 
@@ -2587,47 +2618,39 @@ But for the years to come?
         requestAnimationFrame(draw);
       }
 
-      // Button click handler
+      // Button click handler - fade to fullscreen video
       const button = document.getElementById('valentinesButton');
-      if (button) {
-        button.addEventListener('click', async () => {
+      const fullscreenVideo = document.getElementById('fullscreen-video');
+      const valentinesVideo = document.getElementById('valentinesVideo');
+      
+      if (button && fullscreenVideo && valentinesVideo) {
+        button.addEventListener('click', () => {
           if (button.textContent === "Click Me! ❤") {
-            button.textContent = "loading...";
-            button.disabled = true;
+            // Hide button
+            button.style.opacity = '0';
+            button.style.pointerEvents = 'none';
             
-            try {
-              const response = await fetch('send_mail.php', {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json',
-                }
-              });
-              
-              if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-              }
-              
-              const contentType = response.headers.get('content-type');
-              if (contentType && contentType.includes('application/json')) {
-                const data = await response.json();
-                if (data.success) {
-                  button.textContent = "Check Your Email 🙃";
+            // Set video volume to moderate level (40%)
+            valentinesVideo.volume = 0.4;
+            valentinesVideo.muted = false;
+            
+            // Show and play video
+            fullscreenVideo.classList.add('show');
+            valentinesVideo.play().catch(err => {
+              console.error('Video play error:', err);
+            });
+            
+            // Optional: Fade out background music when video starts
+            const bgMusic = document.getElementById('bgMusic');
+            if (bgMusic) {
+              const fadeOut = setInterval(() => {
+                if (bgMusic.volume > 0) {
+                  bgMusic.volume = Math.max(0, bgMusic.volume - 0.05);
                 } else {
-                  button.textContent = "Error 😞";
-                  button.disabled = false;
-                  console.error('Email error:', data.message);
+                  clearInterval(fadeOut);
+                  bgMusic.pause();
                 }
-              } else {
-                // Handle non-JSON response (might be PHP error output)
-                const text = await response.text();
-                console.error('Non-JSON response:', text);
-                button.textContent = "Error 😞";
-                button.disabled = false;
-              }
-            } catch (error) {
-              console.error('Error:', error);
-              button.textContent = "Error 😞";
-              button.disabled = false;
+              }, 100);
             }
           }
         });
@@ -2650,8 +2673,8 @@ But for the years to come?
       const bgMusic = document.getElementById('bgMusic');
       if (!bgMusic) return;
 
-      // Set volume to soft (30% volume)
-      bgMusic.volume = 0.3;
+      // Set volume higher (60% volume)
+      bgMusic.volume = 0.6;
 
       // Try to play music (may require user interaction first due to browser autoplay policies)
       const playMusic = () => {
