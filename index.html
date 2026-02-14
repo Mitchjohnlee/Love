@@ -2175,11 +2175,22 @@ But for the years to come?
       // show bouquet overlay BIG, center, for 7–8 seconds
       bouquetOverlay.classList.add('show');
 
+      let bouquetTimeout = null;
       const showMs = 7600; // ~7.6s
-      setTimeout(()=>{
+      
+      const proceedFromBouquet = () => {
+        if (bouquetTimeout) {
+          clearTimeout(bouquetTimeout);
+          bouquetTimeout = null;
+        }
         bouquetOverlay.classList.remove('show');
         openPoemModal();
-      }, showMs);
+      };
+
+      // Click to skip bouquet wait
+      bouquetOverlay.addEventListener('click', proceedFromBouquet, { once: true });
+      
+      bouquetTimeout = setTimeout(proceedFromBouquet, showMs);
     }
 
     function openPoemModal(){
@@ -2446,6 +2457,36 @@ But for the years to come?
       let thirdOpacity = 0;
 
       let baseFrame = context.getImageData(0, 0, canvas.width, canvas.height);
+
+      // Click to skip to next text section
+      canvas.addEventListener('click', () => {
+        // Advance to next section based on current frame
+        if (frameNumber < 250) {
+          frameNumber = 250; // Skip to fade out of first text
+        } else if (frameNumber < 500) {
+          frameNumber = 500; // Skip to next text
+        } else if (frameNumber < 750) {
+          frameNumber = 750; // Skip to fade out
+        } else if (frameNumber < 1000) {
+          frameNumber = 1000; // Skip to next text
+        } else if (frameNumber < 1250) {
+          frameNumber = 1250; // Skip to fade out
+        } else if (frameNumber < 1500) {
+          frameNumber = 1500; // Skip to next text
+        } else if (frameNumber < 1750) {
+          frameNumber = 1750; // Skip to fade out
+        } else if (frameNumber < 2000) {
+          frameNumber = 2000; // Skip to next text
+        } else if (frameNumber < 2250) {
+          frameNumber = 2250; // Skip to fade out
+        } else if (frameNumber < 2500) {
+          frameNumber = 2500; // Skip to final text
+        } else if (frameNumber < 2750) {
+          frameNumber = 2750; // Skip to second line
+        } else if (frameNumber < 3000) {
+          frameNumber = 3000; // Skip to final line and button
+        }
+      });
 
       function drawStars() {
         for (let i = 0; i < stars; i++) {
